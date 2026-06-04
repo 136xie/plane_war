@@ -5,5 +5,4 @@ int main() {
 	int id;
 	char name[50];
 	int student_score[COURSE_NUM];
-	double average;
-	FILE* 
+	
