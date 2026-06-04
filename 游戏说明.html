@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>飞机大战 - 代码详解 & 答辩指南</title>
+<style>
+  :root { --bg:#0d1117; --card:#161b22; --border:#30363d; --text:#c9d1d9; --accent:#58a6ff; --green:#3fb950; --red:#f85149; --yellow:#d2991d; --purple:#bc8cff; --code-bg:#0d1117; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--text); font-family:"Segoe UI","Microsoft YaHei",sans-serif; line-height:1.7; padding:40px 20px; }
+  .container { max-width:960px; margin:0 auto; }
+  h1 { font-size:2.2em; color:var(--accent); border-bottom:2px solid var(--border); padding-bottom:16px; margin-bottom:24px; }
+  h2 { font-size:1.5em; color:var(--green); margin:48px 0 16px; padding:8px 0; border-bottom:1px solid var(--border); }
+  h3 { font-size:1.2em; color:var(--yellow); margin:32px 0 12px; }
+  p { margin:12px 0; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:24px; margin:16px 0; }
+  .card.green { border-left:4px solid var(--green); }
+  .card.blue { border-left:4px solid var(--accent); }
+  .card.red { border-left:4px solid var(--red); }
+  .card.yellow { border-left:4px solid var(--yellow); }
+  .card.purple { border-left:4px solid var(--purple); }
+  pre { background:var(--code-bg); border:1px solid var(--border); border-radius:6px; padding:16px; overflow-x:auto; font-size:0.85em; line-height:1.5; tab-size:2; }
+  code { font-family:"Cascadia Code","Fira Code","Consolas",monospace; font-size:0.9em; }
+  .keyword { color:#ff7b72; }
+  .type { color:#ffa657; }
+  .func { color:#d2a8ff; }
+  .comment { color:#8b949e; font-style:italic; }
+  .string { color:#a5d6ff; }
+  .num { color:#79c0ff; }
+  .macro { color:#ffa657; }
+  table { width:100%; border-collapse:collapse; margin:16px 0; }
+  th { background:var(--border); color:var(--accent); padding:10px 14px; text-align:left; font-weight:600; }
+  td { padding:10px 14px; border-bottom:1px solid var(--border); }
+  tr:hover td { background:rgba(255,255,255,0.03); }
+  .flow { background:var(--card); border-radius:8px; padding:24px; margin:16px 0; font-family:monospace; white-space:pre; line-height:1.4; color:var(--accent); }
+  .badge { display:inline-block; padding:2px 10px; border-radius:12px; font-size:0.78em; font-weight:700; margin:0 4px; }
+  .badge.g { background:#1a3a1a; color:var(--green); }
+  .badge.b { background:#1a2a3a; color:var(--accent); }
+  .badge.r { background:#3a1a1a; color:var(--red); }
+  .badge.y { background:#3a3a1a; color:var(--yellow); }
+  ul,ol { padding-left:24px; margin:12px 0; }
+  li { margin:6px 0; }
+  .highlight { background:rgba(88,166,255,0.15); padding:2px 6px; border-radius:3px; }
+  strong { color:#fff; }
+  .diagram { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:20px; margin:16px 0; text-align:center; }
+  .pagebreak { page-break-before:always; }
+  @media print {
+    body { background:#fff; color:#000; padding:0; }
+    :root { --bg:#fff; --card:#fff; --border:#ccc; --text:#222; --accent:#0366d6; --green:#22863a; --red:#cb2431; --yellow:#735c0f; --purple:#6f42c1; --code-bg:#f6f8fa; }
+    .card { border:1px solid #ddd; }
+    pre { border:1px solid #ddd; background:#f6f8fa; }
+    h1,h2,h3 { color:#000; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>🎮 飞机大战 — 代码详解 & 答辩指南</h1>
+
+<p style="font-size:1.1em;color:var(--yellow);">C语言 + EasyX 图形库 | 单人项目 | ~400行 | 720×960窗口 | 60FPS</p>
+
+<!-- ================ 目录 ================ -->
+<div class="card blue">
+<h3>📑 文档结构</h3>
+<ol style="columns:2;">
+  <li><a href="#s1" style="color:var(--accent);">项目总览 & 游戏演示</a></li>
+  <li><a href="#s2" style="color:var(--accent);">头文件 & 常量定义</a></li>
+  <li><a href="#s3" style="color:var(--accent);">五种结构体（数据模型）</a></li>
+  <li><a href="#s4" style="color:var(--accent);">全局变量 & 对象池</a></li>
+  <li><a href="#s5" style="color:var(--accent);">实体生成（生成子弹/敌机/粒子）</a></li>
+  <li><a href="#s6" style="color:var(--accent);">更新逻辑（核心帧循环）</a></li>
+  <li><a href="#s7" style="color:var(--accent);">AABB 碰撞检测 ⭐</a></li>
+  <li><a href="#s8" style="color:var(--accent);">渲染系统（双缓冲 & 画图）</a></li>
+  <li><a href="#s9" style="color:var(--accent);">粒子系统详解</a></li>
+  <li><a href="#s10" style="color:var(--accent);">主循环 & 状态机</a></li>
+  <li><a href="#s11" style="color:var(--accent);">答辩稿（5分钟逐字稿）</a></li>
+  <li><a href="#s12" style="color:var(--accent);">Q&A 题库（15题）</a></li>
+  <li><a href="#s13" style="color:var(--accent);">PPT 页码对照</a></li>
+</ol>
+</div>
+
+<!-- ================ S1: 总览 ================ -->
+<h2 id="s1">一、项目总览</h2>
+
+<div class="card green">
+<p><strong>这是什么：</strong>一个竖版射击游戏。玩家控制底部飞机，发射子弹消灭上方落下的敌机。三种敌机（小/中/大），爆炸粒子特效，难度逐渐增加，星空背景滚动。</p>
+</div>
+
+<div class="diagram">
+<pre style="background:transparent;border:none;text-align:center;line-height:1.3;font-size:0.95em;">
+  ┌─────────────────────────────────┐
+  │  Score: 150  Best: 320  HP x 2  │ ← UI 信息栏
+  ├─────────────────────────────────┤
+  │         ·   ·      ·           │
+  │    👾      ·     👾     👾     │ ← 敌机（三种大小）
+  │       ↓↓        ↓↓            │
+  │      💥        💥              │ ← 爆炸粒子
+  │          ·   🚀       ·       │ ← 玩家飞机 + 子弹
+  │   ·         ↓↓↓        ·      │
+  │                                 │ ← 星空背景
+  └─────────────────────────────────┘
+</pre>
+<p style="font-size:0.85em;color:var(--text);opacity:0.7;">窗口 720×960，深空背景 + 视差星星</p>
+</div>
+
+<table>
+<tr><th>关键技术</th><th>说明</th></tr>
+<tr><td><span class="badge b">状态机</span></td><td>MENU → PLAYING → GAMEOVER 三态切换，int 变量控制</td></tr>
+<tr><td><span class="badge g">对象池</span></td><td>预分配数组 + active 标记，全程无 malloc/free</td></tr>
+<tr><td><span class="badge y">AABB 碰撞</span></td><td>轴对齐矩形碰撞检测，X/Y 投影分离判断</td></tr>
+<tr><td><span class="badge r">粒子系统</span></td><td>随机速度 + 重力 + 颜色渐变，模拟爆炸火花</td></tr>
+<tr><td><span class="badge b">双缓冲</span></td><td>BeginBatchDraw / FlushBatchDraw 防画面闪烁</td></tr>
+<tr><td><span class="badge g">难度曲线</span></td><td>分数÷500 加速敌机生成，大敌机左右摇摆</td></tr>
+</table>
+
+<!-- ================ S2: 头文件 & 常量 ================ -->
+<h2 id="s2">二、头文件 & 常量定义</h2>
+
+<div class="card blue">
+<pre><code><span class="macro">#define</span> NOMINMAX          <span class="comment">// 阻止 Windows 的 min/max 宏污染代码</span>
+<span class="macro">#include</span> <span class="string">&lt;graphics.h&gt;</span>    <span class="comment">// EasyX 绘图：画圆、矩形、文字</span>
+<span class="macro">#include</span> <span class="string">&lt;stdio.h&gt;</span>       <span class="comment">// sprintf_s 格式化字符串</span>
+<span class="macro">#include</span> <span class="string">&lt;stdlib.h&gt;</span>      <span class="comment">// rand() 随机数</span>
+<span class="macro">#include</span> <span class="string">&lt;time.h&gt;</span>        <span class="comment">// time() 随机种子</span>
+<span class="macro">#include</span> <span class="string">&lt;math.h&gt;</span>        <span class="comment">// sinf/cosf 三角函数（粒子方向）</span>
+<span class="macro">#include</span> <span class="string">&lt;tchar.h&gt;</span>       <span class="comment">// TCHAR/_T() 兼容 Unicode/MBCS</span></code></pre>
+</div>
+
+<div class="card yellow">
+<h3>关键常量</h3>
+<table>
+<tr><th>常量</th><th>值</th><th>含义</th></tr>
+<tr><td>WINDOW_WIDTH/HEIGHT</td><td>720×960</td><td>窗口尺寸</td></tr>
+<tr><td>MAX_BULLETS</td><td>100</td><td>屏幕最多同时 100 颗子弹</td></tr>
+<tr><td>MAX_ENEMIES</td><td>50</td><td>屏幕最多同时 50 架敌机</td></tr>
+<tr><td>MAX_PARTICLES</td><td>200</td><td>屏幕最多同时 200 个粒子</td></tr>
+<tr><td>PLAYER_SPEED</td><td>6</td><td>玩家每帧移动 6 像素</td></tr>
+<tr><td>BULLET_SPEED</td><td>10</td><td>子弹每帧飞 10 像素</td></tr>
+<tr><td>SHOOT_CD</td><td>8</td><td>射击冷却 8 帧（防连射）</td></tr>
+<tr><td>INVINCIBLE</td><td>90</td><td>受伤无敌 90 帧 ≈ 1.5 秒</td></tr>
+<tr><td>MAX_LIVES</td><td>3</td><td>3 条命</td></tr>
+</table>
+</div>
+
+<div class="card">
+<pre><code><span class="comment">// 按键检测宏：包裹 Windows API，用 KEY_DOWN('A') 判断按键</span>
+<span class="macro">#define</span> <span class="func">KEY_DOWN</span>(vk) ((<span class="func">GetAsyncKeyState</span>(vk) &amp; <span class="num">0x8000</span>) ? <span class="num">1</span> : <span class="num">0</span>)</code></pre>
+</div>
+
+<!-- ================ S3: 结构体 ================ -->
+<h2 id="s3">三、五种结构体（数据模型）</h2>
+
+<div class="card green">
+<p><strong>设计思想：</strong>每种游戏实体对应一个结构体。用 <span class="highlight">active</span> 字段管理生命周期（1=活跃/0=空闲），实现<span class="highlight">对象池</span>——预分配数组，循环复用，零内存分配。</p>
+</div>
+
+<div class="card">
+<h3>① 玩家飞机</h3>
+<pre><code><span class="keyword">typedef struct</span> {
+    <span class="type">float</span> x, y;               <span class="comment">// 坐标（float 保证平滑移动）</span>
+    <span class="type">int</span>   w, h;               <span class="comment">// 碰撞体积（宽×高）</span>
+    <span class="type">int</span>   lives;              <span class="comment">// 剩余命数</span>
+    <span class="type">int</span>   invTimer;           <span class="comment">// 无敌倒计时（>0=无敌中）</span>
+    <span class="type">int</span>   shootTimer;         <span class="comment">// 射击冷却倒计时（>0=不能射）</span>
+} <span class="type">Player</span>;</code></pre>
+</div>
+
+<div class="card">
+<h3>② 子弹</h3>
+<pre><code><span class="keyword">typedef struct</span> {
+    <span class="type">float</span> x, y;  <span class="type">int</span> w, h;
+    <span class="type">int</span>   active;  <span class="comment">// ⭐ 对象池核心：1=使用中, 0=空闲可复用</span>
+} <span class="type">Bullet</span>;</code></pre>
+</div>
+
+<div class="card">
+<h3>③ 敌机</h3>
+<pre><code><span class="keyword">typedef struct</span> {
+    <span class="type">float</span> x, y;  <span class="type">int</span> w, h;
+    <span class="type">int</span>   speed;   <span class="comment">// 下落速度</span>
+    <span class="type">int</span>   hp;      <span class="comment">// 血量：小1/中2/大4</span>
+    <span class="type">int</span>   type;    <span class="comment">// 0=小 1=中 2=大</span>
+    <span class="type">int</span>   active;
+} <span class="type">Enemy</span>;</code></pre>
+</div>
+
+<div class="card">
+<h3>④ 爆炸粒子</h3>
+<pre><code><span class="keyword">typedef struct</span> {
+    <span class="type">float</span> x, y;              <span class="comment">// 当前位置</span>
+    <span class="type">float</span> vx, vy;            <span class="comment">// 速度向量（方向+快慢）</span>
+    <span class="type">int</span>   life, maxLife;     <span class="comment">// 剩余/总寿命（帧），ratio=life/maxLife 控制颜色</span>
+    <span class="type">int</span>   active;
+} <span class="type">Particle</span>;</code></pre>
+</div>
+
+<div class="card">
+<h3>⑤ 背景星星</h3>
+<pre><code><span class="keyword">typedef struct</span> {
+    <span class="type">float</span> x, y;
+    <span class="type">int</span>   speed;    <span class="comment">// 1(远/暗/慢) ~ 3(近/亮/快) → 视差效果</span>
+    <span class="type">int</span>   bright;   <span class="comment">// 亮度 100~255</span>
+} <span class="type">Star</span>;</code></pre>
+</div>
+
+<div class="card purple">
+<h3>💡 答辩话术</h3>
+<p>"五种实体各一个结构体，用 active 标记管理生命周期。这就是轻量级的对象池模式——预分配固定数组，用的时候激活，不用了回收。全程没有一个 malloc，也没有一个 free。"</p>
+</div>
+
+<!-- ================ S4: 全局变量 & 对象池 ================ -->
+<h2 id="s4">四、全局变量 & 对象池</h2>
+
+<div class="card">
+<pre><code><span class="comment">// 实体实例</span>
+<span class="type">Player</span>   g_player;                            <span class="comment">// 玩家（只有一架）</span>
+<span class="type">Bullet</span>   g_bullets[<span class="num">MAX_BULLETS</span>];          <span class="comment">// 子弹池：100个槽位</span>
+<span class="type">Enemy</span>    g_enemies[<span class="num">MAX_ENEMIES</span>];          <span class="comment">// 敌机池：50个槽位</span>
+<span class="type">Particle</span> g_particles[<span class="num">MAX_PARTICLES</span>];      <span class="comment">// 粒子池：200个槽位</span>
+<span class="type">Star</span>     g_stars[<span class="num">MAX_STARS</span>];              <span class="comment">// 星星池：80颗</span>
+
+<span class="comment">// 游戏状态</span>
+<span class="type">int</span> g_score;            <span class="comment">// 当前分数</span>
+<span class="type">int</span> g_highScore;        <span class="comment">// 历史最高分</span>
+<span class="type">int</span> g_state;            <span class="comment">// 0=菜单 1=游戏中 2=结束</span>
+<span class="type">int</span> g_enemySpawnTimer;  <span class="comment">// 敌机生成倒计时</span>
+<span class="type">int</span> g_enemySpawnRate;   <span class="comment">// 生成间隔（随分数减小）</span>
+<span class="type">int</span> g_frameCount;       <span class="comment">// 总帧数（驱动动画周期）</span></code></pre>
+</div>
+
+<div class="card green">
+<h3>⭐ 对象池的三个核心函数</h3>
+<pre><code><span class="type">Bullet</span>* <span class="func">getFreeBullet</span>() {
+    <span class="keyword">for</span>(<span class="type">int</span> i=<span class="num">0</span>; i&lt;MAX_BULLETS; i++)
+        <span class="keyword">if</span>(!g_bullets[i].active)        <span class="comment">// 找空闲槽位</span>
+            <span class="keyword">return</span> &amp;g_bullets[i];        <span class="comment">// 返回地址 → 填入新数据 → 激活</span>
+    <span class="keyword">return</span> <span class="num">NULL</span>;  <span class="comment">// 池满（正常游戏不可能满）</span>
+}
+<span class="comment">// getFreeEnemy() 和 getFreeParticle() 逻辑完全一样</span></code></pre>
+</div>
+
+<div class="card">
+<h3>🔄 对象池生命周期</h3>
+<div class="diagram">
+<pre style="background:transparent;border:none;text-align:center;">
+  数组初始化（active 全 = 0）
+        │
+        ▼
+  ┌─ 需要新对象 ──→ getFreeXXX() 遍历找 active==0 的槽
+  │                      │
+  │                      ▼
+  │               填入数据（x,y,w,h,hp...）
+  │               设置 active = 1
+  │                      │
+  │                      ▼
+  │               对象在游戏中活动（飞、碰撞、渲染）
+  │                      │
+  │                      ▼
+  │               条件触发（飞出屏幕 / 死亡 / 寿命到）
+  │                      │
+  │                      ▼
+  │               设置 active = 0 ←── 回收！
+  │                      │
+  └──────────────────────┘
+</pre>
+</div>
+</div>
+
+<!-- ================ S5: 实体生成 ================ -->
+<h2 id="s5">五、实体生成</h2>
+
+<div class="card">
+<h3>生成子弹 — 双发</h3>
+<pre><code><span class="keyword">void</span> <span class="func">spawnBullet</span>(){
+    <span class="type">Bullet</span>*b=<span class="func">getFreeBullet</span>(); <span class="keyword">if</span>(!b)<span class="keyword">return</span>;
+    b-&gt;x=g_player.x;                         <span class="comment">// 从玩家 X 坐标</span>
+    b-&gt;y=g_player.y - g_player.h/<span class="num">2</span>;         <span class="comment">// 从机头射出</span>
+    b-&gt;w=<span class="num">6</span>; b-&gt;h=<span class="num">14</span>; b-&gt;active=<span class="num">1</span>;
+}
+<span class="comment">// 实际调用时左右翼各发一颗 → 双发效果</span></code></pre>
+</div>
+
+<div class="card">
+<h3>生成敌机 — 随机类型</h3>
+<pre><code><span class="keyword">void</span> <span class="func">spawnEnemy</span>(){
+    <span class="type">Enemy</span>*e=<span class="func">getFreeEnemy</span>(); <span class="keyword">if</span>(!e)<span class="keyword">return</span>;
+    <span class="type">int</span> r=<span class="func">rand</span>()%<span class="num">100</span>;
+    <span class="keyword">if</span>(r&lt;<span class="num">70</span>){      <span class="comment">// 70% → 小敌机（快、脆、10分）</span>
+        e-&gt;type=ENEMY_SMALL; e-&gt;w=<span class="num">30</span>; e-&gt;speed=<span class="func">rand</span>()%<span class="num">3</span>+<span class="num">3</span>; e-&gt;hp=<span class="num">1</span>;
+    }<span class="keyword">else if</span>(r&lt;<span class="num">90</span>){ <span class="comment">// 20% → 中敌机</span>
+        e-&gt;type=ENEMY_MEDIUM; e-&gt;w=<span class="num">40</span>; e-&gt;speed=<span class="func">rand</span>()%<span class="num">2</span>+<span class="num">2</span>; e-&gt;hp=<span class="num">2</span>;
+    }<span class="keyword">else</span>{           <span class="comment">// 10% → 大敌机（慢、肉、左右摇摆、50分）</span>
+        e-&gt;type=ENEMY_BIG; e-&gt;w=<span class="num">55</span>; e-&gt;speed=<span class="num">1</span>; e-&gt;hp=<span class="num">4</span>;
+    }
+    e-&gt;x=(<span class="type">float</span>)(<span class="func">rand</span>()%(WINDOW_WIDTH-e-&gt;w)+e-&gt;w/<span class="num">2</span>); <span class="comment">// 随机X不超边界</span>
+    e-&gt;y=(<span class="type">float</span>)(-e-&gt;h); <span class="comment">// 从屏幕顶部外飞入</span>
+    e-&gt;active=<span class="num">1</span>;
+}</code></pre>
+</div>
+
+<div class="card red">
+<h3>⭐ 生成爆炸粒子 — 答辩重点</h3>
+<pre><code><span class="keyword">void</span> <span class="func">spawnExplosion</span>(<span class="type">float</span> x,<span class="type">float</span> y,<span class="type">int</span> count){
+    <span class="keyword">for</span>(<span class="type">int</span> i=<span class="num">0</span>; i&lt;count; i++){
+        <span class="type">Particle</span>*p=<span class="func">getFreeParticle</span>(); <span class="keyword">if</span>(!p)<span class="keyword">break</span>;
+        p-&gt;x=x; p-&gt;y=y;
+        <span class="comment">// 随机方向 0~360°（转弧度）</span>
+        <span class="type">float</span> angle=(<span class="type">float</span>)(<span class="func">rand</span>()%<span class="num">360</span>)*<span class="num">3.14159f</span>/<span class="num">180.0f</span>;
+        <span class="type">float</span> speed=(<span class="type">float</span>)(<span class="func">rand</span>()%<span class="num">5</span>)+<span class="num">2.0f</span>;
+        p-&gt;vx=<span class="func">cosf</span>(angle)*speed;  <span class="comment">// X 分量 = cos(角度)×速度</span>
+        p-&gt;vy=<span class="func">sinf</span>(angle)*speed;  <span class="comment">// Y 分量 = sin(角度)×速度</span>
+        p-&gt;maxLife=<span class="func">rand</span>()%<span class="num">20</span>+<span class="num">15</span>;   <span class="comment">// 存活 15~35 帧</span>
+        p-&gt;life=p-&gt;maxLife; p-&gt;active=<span class="num">1</span>;
+    }
+}</code></pre>
+<p style="color:var(--yellow);"><strong>三角函数的作用：</strong>angle 是发射角度（0~360°），cos(angle) 和 sin(angle) 把角度拆成 X 方向分量和 Y 方向分量，乘上速度就是向该方向飞。360 个粒子均匀散布 = 圆形爆炸。</p>
+</div>
+
+<!-- ================ S6: 更新逻辑 ================ -->
+<h2 id="s6">六、更新逻辑（核心帧循环）</h2>
+
+<div class="card blue">
+<h3>updatePlayer() — 玩家</h3>
+<table>
+<tr><th>做的事</th><th>代码逻辑</th></tr>
+<tr><td>移动</td><td>检测 WASD/方向键 → 加减 x/y → imax/imin 限制不超出屏幕边界</td></tr>
+<tr><td>射击冷却</td><td>shootTimer 每帧 -1，到 0 才能发射</td></tr>
+<tr><td>发射子弹</td><td>空格按下 + 冷却完毕 → spawnBullet() ×2（左右双发）→ shootTimer=8</td></tr>
+<tr><td>无敌倒计时</td><td>invTimer 每帧 -1，>0 时碰撞检测跳过</td></tr>
+</table>
+</div>
+
+<div class="card">
+<h3>updateBullets() — 子弹</h3>
+<pre><code><span class="keyword">for</span>(<span class="type">int</span> i=<span class="num">0</span>; i&lt;MAX_BULLETS; i++){
+    <span class="keyword">if</span>(!g_bullets[i].active) <span class="keyword">continue</span>;   <span class="comment">// 跳过不活跃的</span>
+    g_bullets[i].y -= BULLET_SPEED;         <span class="comment">// 往上飞</span>
+    <span class="keyword">if</span>(g_bullets[i].y &lt; -<span class="num">20</span>)               <span class="comment">// 飞出屏幕顶</span>
+        g_bullets[i].active = <span class="num">0</span>;           <span class="comment">// 回收</span>
+}</code></pre>
+<p>逻辑最简单——飞就完了，出屏幕就回收。</p>
+</div>
+
+<div class="card yellow">
+<h3>updateEnemies() — 敌机</h3>
+<pre><code><span class="keyword">for</span>(<span class="type">int</span> i=<span class="num">0</span>; i&lt;MAX_ENEMIES; i++){
+    <span class="keyword">if</span>(!g_enemies[i].active) <span class="keyword">continue</span>;
+    g_enemies[i].y += (<span class="type">float</span>)g_enemies[i].speed;  <span class="comment">// 下落</span>
+    <span class="keyword">if</span>(g_enemies[i].y &gt; WINDOW_HEIGHT+<span class="num">60</span>)    <span class="comment">// 飞出底部</span>
+        g_enemies[i].active=<span class="num">0</span>;                    <span class="comment">// 回收</span>
+
+    <span class="comment">// 大敌机左右摇摆（sin 产生 -1~1 波动）</span>
+    <span class="keyword">if</span>(g_enemies[i].type == ENEMY_BIG)
+        g_enemies[i].x += <span class="func">sinf</span>((<span class="type">float</span>)g_frameCount*<span class="num">0.05f</span>+(<span class="type">float</span>)i)*<span class="num">1.5f</span>;
+}
+
+<span class="comment">// === 难度曲线：敌机生成加速 ===</span>
+g_enemySpawnTimer++;
+<span class="keyword">if</span>(g_enemySpawnTimer &gt;= g_enemySpawnRate){
+    g_enemySpawnTimer=<span class="num">0</span>; <span class="func">spawnEnemy</span>();
+    g_enemySpawnRate = <span class="func">imax</span>(<span class="num">15</span>, <span class="num">45</span> - g_score/<span class="num">500</span>);
+    <span class="comment">// ↑ 分数每多500，生成间隔减1帧（最快15帧）</span>
+}</code></pre>
+</div>
+
+<div class="card">
+<h3>updateParticles() — 粒子</h3>
+<pre><code><span class="keyword">for</span>(<span class="type">int</span> i=<span class="num">0</span>; i&lt;MAX_PARTICLES; i++){
+    <span class="keyword">if</span>(!g_particles[i].active) <span class="keyword">continue</span>;
+    g_particles[i].x  += g_particles[i].vx;   <span class="comment">// 沿速度方向移动</span>
+    g_particles[i].y  += g_particles[i].vy;
+    g_particles[i].vy += <span class="num">0.15f</span>;              <span class="comment">// 重力：速度向下偏转</span>
+    g_particles[i].life--;                    <span class="comment">// 寿命-1</span>
+    <span class="keyword">if</span>(g_particles[i].life &lt;= <span class="num">0</span>)
+        g_particles[i].active = <span class="num">0</span>;          <span class="comment">// 寿终正寝</span>
+}</code></pre>
+</div>
+
+<!-- ================ S7: 碰撞检测 ================ -->
+<div class="pagebreak"></div>
+<h2 id="s7" style="color:var(--red);">七、⭐ AABB 碰撞检测（答辩核心）</h2>
+
+<div class="diagram">
+<p><strong>AABB = Axis-Aligned Bounding Box</strong>（轴对齐包围盒）</p>
+<pre style="background:transparent;border:none;text-align:center;font-size:0.85em;line-height:1.2;">
+        物体1                      物体2
+    l1 ┌────────┐ r1           l2 ┌──────┐ r2
+       │  (x1,y1) │               │(x2,y2)│
+    t1 │   w1×h1 │ b1         t2 │ w2×h2 │ b2
+       └────────┘               └──────┘
+
+    X轴投影重叠？  l1 &lt; r2  且  r1 &gt; l2
+    Y轴投影重叠？  t1 &lt; b2  且  b1 &gt; t2
+
+    两个轴都重叠 → 碰撞！
+</pre>
+</div>
+
+<div class="card red">
+<pre><code><span class="type">int</span> <span class="func">checkCollision</span>(<span class="type">float</span> x1,<span class="type">float</span> y1,<span class="type">int</span> w1,<span class="type">int</span> h1,
+                   <span class="type">float</span> x2,<span class="type">float</span> y2,<span class="type">int</span> w2,<span class="type">int</span> h2){
+    <span class="comment">// 物体1的四条边界 = 中心坐标 ± 半宽/半高</span>
+    <span class="type">float</span> l1 = x1 - w1/<span class="num">2.0f</span>, r1 = x1 + w1/<span class="num">2.0f</span>;  <span class="comment">// 左、右</span>
+    <span class="type">float</span> t1 = y1 - h1/<span class="num">2.0f</span>, b1 = y1 + h1/<span class="num">2.0f</span>;  <span class="comment">// 上、下</span>
+
+    <span class="comment">// 物体2的四条边界</span>
+    <span class="type">float</span> l2 = x2 - w2/<span class="num">2.0f</span>, r2 = x2 + w2/<span class="num">2.0f</span>;
+    <span class="type">float</span> t2 = y2 - h2/<span class="num">2.0f</span>, b2 = y2 + h2/<span class="num">2.0f</span>;
+
+    <span class="comment">// 四个条件同时成立 → 碰撞</span>
+    <span class="keyword">return</span> (l1 &lt; r2 &amp;&amp; r1 &gt; l2 &amp;&amp;    <span class="comment">// X轴重叠</span>
+            t1 &lt; b2 &amp;&amp; b1 &gt; t2);      <span class="comment">// Y轴重叠</span>
+}</code></pre>
+</div>
+
+<div class="card purple">
+<h3>💡 答辩用一句话</h3>
+<p>"AABB 碰撞检测——分别判断 X 轴和 Y 轴的投影是否重叠。如果任意一个轴的投影不重叠，两个矩形就一定不碰撞。这其实是分离轴定理在轴对齐情况下的简化版。"</p>
+</div>
+
+<div class="card">
+<h3>碰撞检测的两个应用场景</h3>
+<table>
+<tr><th>场景</th><th>做了什么</th><th>特殊处理</th></tr>
+<tr><td>子弹 vs 敌机</td><td>双重循环遍历所有子弹×敌机。命中→子弹消失、敌机扣血/死亡爆炸</td><td>一颗子弹只打一架（break）</td></tr>
+<tr><td>玩家 vs 敌机</td><td>遍历所有敌机。碰撞→敌机炸、玩家扣命、进入无敌</td><td>无敌中直接跳过检测</td></tr>
+</table>
+</div>
+
+<!-- ================ S8: 渲染 ================ -->
+<h2 id="s8">八、渲染系统</h2>
+
+<div class="card blue">
+<h3>双缓冲原理</h3>
+<table>
+<tr><th>模式</th><th>工作方式</th><th>效果</th></tr>
+<tr><td>单缓冲 ❌</td><td>直接往屏幕画 → 每笔都能看到</td><td>画面闪烁</td></tr>
+<tr><td>双缓冲 ✅</td><td>先画到后台 → 一帧画完整张替换</td><td>完全流畅</td></tr>
+</table>
+<pre><code><span class="comment">// main() 开头</span>
+<span class="func">BeginBatchDraw</span>();   <span class="comment">// 开启双缓冲模式</span>
+
+<span class="comment">// 每一帧结束时</span>
+<span class="func">FlushBatchDraw</span>();  <span class="comment">// 将后台缓冲一次性提交到屏幕</span>
+
+<span class="comment">// 程序退出时</span>
+<span class="func">EndBatchDraw</span>();     <span class="comment">// 关闭双缓冲</span></code></pre>
+</div>
+
+<div class="card">
+<h3>渲染顺序 = 图层叠放次序</h3>
+<div class="diagram">
+<pre style="background:transparent;border:none;text-align:center;">
+  第1层：drawBackground()    ← 清屏 + 星空（最底层）
+  第2层：drawBullets()       ← 子弹
+  第3层：drawEnemies()       ← 敌机
+  第4层：drawParticles()     ← 爆炸粒子
+  第5层：drawPlayer()        ← 玩家飞机
+  第6层：drawUI()            ← 分数/血量栏（最顶层）
+     ↓
+  FlushBatchDraw()           ← 全部提交到屏幕
+</pre>
+</div>
+</div>
+
+<div class="card green">
+<h3>玩家飞机是怎么画的（几何图形拼接）</h3>
+<pre><code><span class="comment">// 6 个几何组件拼接成一架战斗机：</span>
+<span class="comment">// ① 机身 → 蓝色椭圆</span>
+<span class="func">solidellipse</span>(x-<span class="num">12</span>, y-<span class="num">25</span>, x+<span class="num">12</span>, y+<span class="num">20</span>);
+<span class="comment">// ② 驾驶舱 → 青色小椭圆</span>
+<span class="func">solidellipse</span>(x-<span class="num">5</span>, y-<span class="num">10</span>, x+<span class="num">5</span>, y+<span class="num">5</span>);
+<span class="comment">// ③ 左翼 → 浅蓝三角形</span>
+<span class="func">solidpolygon</span>({{x-<span class="num">12</span>,y+<span class="num">5</span>},{x-<span class="num">30</span>,y+<span class="num">15</span>},{x-<span class="num">12</span>,y-<span class="num">5</span>}}, <span class="num">3</span>);
+<span class="comment">// ④ 右翼 → 浅蓝三角形</span>
+<span class="comment">// ⑤ 尾翼 → 深蓝三角形</span>
+<span class="comment">// ⑥ 引擎火焰 → 黄橙色三角形（长度=8+(帧号%10)*2 →呼吸效果）</span></code></pre>
+</div>
+
+<div class="card">
+<h3>三种敌机的画法</h3>
+<table>
+<tr><th>类型</th><th>形状</th><th>颜色</th><th>血量标记</th></tr>
+<tr><td>小敌机</td><td>倒三角(3顶点)</td><td>红色</td><td>无（就1血）</td></tr>
+<tr><td>中敌机</td><td>梯形(4顶点)</td><td>橙色</td><td>满血时红点标记</td></tr>
+<tr><td>大敌机</td><td>五边形(5顶点)</td><td>紫色</td><td>小黄点 × hp</td></tr>
+</table>
+</div>
+
+<!-- ================ S9: 粒子系统 ================ -->
+<h2 id="s9">九、粒子系统详解</h2>
+
+<div class="card red">
+<h3>一颗粒子的完整生命周期</h3>
+<div class="diagram">
+<pre style="background:transparent;border:none;text-align:center;line-height:1.6;">
+  spawnExplosion()
+    │
+    ├→ 随机角度 (0°~360°) → 用三角函数拆成 vx, vy
+    ├→ 随机速度 (2~6)
+    ├→ 初始生命 = 15~35 帧
+    │
+    ▼
+  每帧：
+    x += vx    (水平移动)
+    y += vy    (垂直移动)
+    vy += 0.15 (重力拉弯轨迹)
+    life -= 1
+    │
+    ├→ ratio = life / maxLife
+    │   > 0.6 → 黄色（刚爆炸，最亮）
+    │   0.3~0.6 → 橙色（中场）
+    │   < 0.3 → 暗红色（快熄灭）
+    │
+    ▼
+  life ≤ 0 → active = 0（回收）
+
+  粒子大小也随 ratio 变化：size = 3×ratio + 1
+  → 刚生成大，随时间缩小
+</pre>
+</div>
+</div>
+
+<div class="card purple">
+<h3>💡 答辩话术</h3>
+<p>"爆炸时在中心生成几十个粒子，每个粒子有随机发射方向、初始速度、固定寿命。粒子受重力影响，轨迹向下弯曲。颜色从黄色渐变到橙色再到暗红色，大小也同步缩小——模拟高温火花逐渐冷却熄灭的物理过程。这和商业游戏的粒子特效原理一样，只是他们用 GPU 着色器实现，我这里是逐帧 CPU 计算。"</p>
+</div>
+
+<!-- ================ S10: 主循环 ================ -->
+<h2 id="s10">十、主循环 & 状态机</h2>
+
+<div class="diagram">
+<pre style="background:transparent;border:none;text-align:center;line-height:1.2;font-size:0.85em;">
+                    ┌──────────┐
+        ┌─── SPACE →│  PLAYING │←──── R ───┐
+        │           │ update() │           │
+        │           │ render() │           │
+        │           └────┬─────┘           │
+        │              Q │                 │
+        ▼                ▼                 │
+   ┌─────────┐                    ┌───────────┐
+   │  MENU   │                    │ GAMEOVER  │
+   │ drawMenu│     玩家死亡 →     │drawGameOver│
+   └─────────┘                    └───────────┘
+        │                               │
+        └──── ESC ────→ 退出 ←── ESC ──┘
+</pre>
+</div>
+
+<div class="card blue">
+<pre><code><span class="type">int</span> <span class="func">main</span>(){
+    <span class="func">initgraph</span>(<span class="num">720</span>,<span class="num">960</span>);        <span class="comment">// 打开图形窗口</span>
+    <span class="func">BeginBatchDraw</span>();          <span class="comment">// 开启双缓冲</span>
+    <span class="func">srand</span>((<span class="type">unsigned</span>)<span class="func">time</span>(<span class="num">NULL</span>)); <span class="comment">// 随机种子 = 当前时间</span>
+    <span class="func">initGame</span>();                <span class="comment">// 初始化一切</span>
+    g_state = STATE_MENU;       <span class="comment">// 初始状态 = 菜单</span>
+
+    <span class="keyword">while</span>(<span class="num">1</span>){                    <span class="comment">// 死循环，游戏一直跑</span>
+        g_frameCount++;         <span class="comment">// 帧号+1</span>
+
+        <span class="keyword">switch</span>(g_state){        <span class="comment">// 根据状态做不同的事</span>
+
+        <span class="keyword">case</span> STATE_MENU:
+            <span class="func">drawMenu</span>();             <span class="comment">// 画菜单</span>
+            <span class="keyword">if</span>(KEY_DOWN(VK_SPACE))  <span class="comment">// 空格 → 开始游戏</span>
+                { <span class="func">initGame</span>(); g_state=STATE_PLAYING; }
+            <span class="keyword">if</span>(KEY_DOWN(VK_ESCAPE)) <span class="comment">// ESC → 退出</span>
+                <span class="keyword">goto</span> exitGame;
+            <span class="keyword">break</span>;
+
+        <span class="keyword">case</span> STATE_PLAYING:
+            <span class="func">updateGame</span>(); <span class="func">render</span>();  <span class="comment">// 更新+渲染</span>
+            <span class="keyword">if</span>(KEY_DOWN(<span class="string">'Q'</span>))        <span class="comment">// Q → 回菜单</span>
+                g_state = STATE_MENU;
+            <span class="keyword">if</span>(KEY_DOWN(VK_ESCAPE))
+                <span class="keyword">goto</span> exitGame;
+            <span class="keyword">break</span>;
+
+        <span class="keyword">case</span> STATE_GAMEOVER:
+            <span class="func">drawGameOver</span>();         <span class="comment">// 画结束画面</span>
+            <span class="keyword">if</span>(KEY_DOWN(<span class="string">'R'</span>))        <span class="comment">// R → 重来</span>
+                { <span class="func">initGame</span>(); g_state=STATE_PLAYING; }
+            <span class="keyword">if</span>(KEY_DOWN(VK_ESCAPE))
+                <span class="keyword">goto</span> exitGame;
+            <span class="func">updateStars</span>();           <span class="comment">// 星星继续动</span>
+            <span class="func">updateParticles</span>();      <span class="comment">// 粒子继续散</span>
+            <span class="keyword">break</span>;
+        }
+
+        <span class="func">Sleep</span>(<span class="num">16</span>);               <span class="comment">// 等16ms → ≈60 FPS</span>
+    }
+
+exitGame:
+    <span class="func">EndBatchDraw</span>();           <span class="comment">// 关双缓冲</span>
+    <span class="func">closegraph</span>();              <span class="comment">// 关窗口</span>
+    <span class="keyword">return</span> <span class="num">0</span>;
+}</code></pre>
+</div>
+
+<div class="card yellow">
+<h3>💡 为什么用 goto？</h3>
+<p>老师大概率会问。标准回答："exitGame 是统一的清理出口。不用 goto 的话，需要在三个 case 里都写 EndBatchDraw+closegraph+return，代码重复三遍。goto 在这里充当了清理函数的作用，比复制粘贴更不容易出错。这是 C 语言里公认的 goto 最佳实践。"</p>
+</div>
+
+<!-- ================ S11: 答辩稿 ================ -->
+<div class="pagebreak"></div>
+<h2 id="s11">十一、答辩稿（5分钟逐字稿）</h2>
+
+<div class="card green">
+<h3>【开场 30秒】</h3>
+<p>"老师们好。我的项目是飞机大战——基于 EasyX 图形库的竖版射击游戏。C 语言编写，大约 400 行。我先演示一下。"</p>
+<p style="color:var(--yellow);"><strong>【双击 exe，打一分钟，自然死亡】</strong></p>
+</div>
+
+<div class="card">
+<h3>【架构 30秒】</h3>
+<p>"这个游戏用状态机管理三个画面——菜单、游戏、结束。每帧三件事：处理输入→更新状态→渲染。对象池管理实体——预分配数组加 active 标记，不用 malloc。"</p>
+</div>
+
+<div class="card blue">
+<h3>【数据结构 30秒】"五种实体，每种一个结构体。Bullet/Enemy/Particle 都有 active 字段。需要新对象时去数组里找一个 active=0 的槽位激活，用完了标记回0回收。"</h3>
+</div>
+
+<div class="card red">
+<h3>【碰撞检测 1分钟 ⭐】</h3>
+<p>"碰撞用的是 AABB——轴对齐包围盒。把每个物体简化成一个矩形，计算四条边界。分别判断 X 轴和 Y 轴的投影是否重叠。任一轴不重叠就一定不碰撞——分离轴定理的简化版。复杂度 O(n×m)，当前规模完全够用。"</p>
+</div>
+
+<div class="card">
+<h3>【粒子系统 30秒】</h3>
+<p>"敌机死亡时生成几十个粒子，随机发射方向、带重力加速度、颜色从黄渐变到暗红——模拟火花熄灭。和商业游戏原理一样，只是在 CPU 上算。"</p>
+</div>
+
+<div class="card green">
+<h3>【其他 & 结束 30秒】</h3>
+<p>"双缓冲防闪烁、难度曲线平滑递增、无敌时间防连死。收获是对游戏循环、碰撞检测、粒子系统有了实战理解。不足是没有贴图和音效。请老师提问。"</p>
+</div>
+
+<!-- ================ S12: Q&A ================ -->
+<h2 id="s12">十二、Q&A 题库</h2>
+
+<div class="card red">
+<h3>Q1: 为什么用数组不用链表？</h3>
+<p>固定池大小可以预判内存上限。数组访问 O(1)，链表遍历 O(n)。而且游戏实体数量天然有上限，超过就不生成。</p>
+</div>
+
+<div class="card">
+<h3>Q2: 双缓冲什么原理？</h3>
+<p>BeginBatchDraw 把所有绘制操作缓存到后台缓冲区，FlushBatchDraw 一次性替换屏幕。如果直接往屏幕上画，玩家会看到绘制过程——闪烁。</p>
+</div>
+
+<div class="card blue">
+<h3>Q3: 碰撞检测精度够吗？</h3>
+<p>对本游戏足够了。两个圆形物体用矩形检测误差很小。要更精确可以用圆形碰撞（比较圆心距和半径和），但性能开销更大。</p>
+</div>
+
+<div class="card">
+<h3>Q4: 物体会不会穿透？</h3>
+<p>当前速度下不会——子弹10像素/帧，碰撞体最小30像素。如果速度超过自身宽度确实会穿（tunneling），需要连续碰撞检测（CCD）。但本游戏没到这个阈值。</p>
+</div>
+
+<div class="card yellow">
+<h3>Q5: 状态机为什么用 int 不用 enum？</h3>
+<p>C 语言习惯，#define 更直观。用 enum 类型更安全——这是可以改的地方。功能上没区别。</p>
+</div>
+
+<div class="card">
+<h3>Q6: 怎么扩展双人？</h3>
+<p>Player 改数组、第二人用方向键、碰撞检测加上玩家间碰撞。框架已经支持了。</p>
+</div>
+
+<div class="card purple">
+<h3>Q7: goto 的问题？</h3>
+<p>exitGame 是统一清理出口。不用 goto 代码重复三遍。C 语言里 goto 做错误处理和资源清理是公认的最佳实践——Linux 内核也大量使用。</p>
+</div>
+
+<div class="card">
+<h3>Q8: 难度怎么设计的？</h3>
+<p>三维度：敌机生成加速（45→15帧）、敌机类型比例（7:2:1，大敌机4血+摇摆）、无敌保护（90帧）。平滑上升不阶梯。</p>
+</div>
+
+<!-- ================ S13: PPT ================ -->
+<h2 id="s13">十三、PPT 页码对照</h2>
+
+<table>
+<tr><th>页码</th><th>放什么</th><th>来源/代码位置</th></tr>
+<tr><td>1</td><td>封面：标题+姓名+学号</td><td>—</td></tr>
+<tr><td>2</td><td>演示：打开 exe 打给老师看</td><td>—</td></tr>
+<tr><td>3</td><td>整体架构：状态机图+帧循环流程图</td><td>main() while(1) switch</td></tr>
+<tr><td>4</td><td>数据结构：5个struct截图，高亮active</td><td>第32-36行结构体定义</td></tr>
+<tr><td>5 ⭐</td><td>碰撞检测：矩形重叠图示 + checkCollision() 截图</td><td>第169-173行</td></tr>
+<tr><td>6</td><td>粒子系统：spawnExplosion + drawParticles 截图</td><td>第98-107行、309-321行</td></tr>
+<tr><td>7</td><td>其他技术点：双缓冲/难度曲线/无敌 小段截图</td><td>各处</td></tr>
+<tr><td>8</td><td>总结+请老师提问</td><td>—</td></tr>
+</table>
+
+<div class="card purple" style="margin-top:32px;">
+<h3>📋 上场前 30 秒默念</h3>
+<p style="font-size:1.1em;text-align:center;">
+我写的代码我比谁都清楚。<br>
+老师不会问超出课程范围的问题。<br>
+卡顿就翻代码，代码不会骗人。<br>
+讲够五分钟，比讲得深更重要。
+</p>
+</div>
+
+<hr style="border-color:var(--border);margin:48px 0;">
+
+<p style="text-align:center;color:var(--text);opacity:0.6;font-size:0.85em;">
+打开这个 HTML → 浏览器 → Ctrl+P 打印 → 另存为 PDF → 答辩当天手机上也能看<br>
+项目文件：D:\1\0252852\plane_war\main.cpp（源代码）main.exe（可执行文件）
+</p>
+
+</div>
+</body>
+</html>

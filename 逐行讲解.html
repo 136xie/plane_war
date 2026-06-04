@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>飞机大战 - 逐行代码讲解</title>
+<style>
+  :root {--bg:#0d1117;--card:#161b22;--bdr:#30363d;--text:#c9d1d9;--acc:#58a6ff;--grn:#3fb950;--red:#f85149;--yel:#d2991d;--pur:#bc8cff;--com:#8b949e;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:"Segoe UI","Microsoft YaHei",sans-serif;line-height:1.75;padding:50px 20px}
+  .wrap{max-width:1000px;margin:0 auto}
+  h1{font-size:2em;color:var(--acc);border-bottom:2px solid var(--bdr);padding-bottom:16px;margin-bottom:8px}
+  h2{font-size:1.4em;color:var(--grn);margin:56px 0 20px;padding:10px 0;border-bottom:2px solid var(--bdr)}
+  h3{font-size:1.15em;color:var(--yel);margin:36px 0 12px}
+  .block{background:var(--card);border:1px solid var(--bdr);border-radius:8px;margin:20px 0;overflow:hidden}
+  .block .title{background:var(--bdr);padding:10px 16px;font-weight:700;color:var(--acc);font-size:0.9em}
+  .block .body{padding:16px}
+  .code{background:#0d1117;border:1px solid var(--bdr);border-radius:6px;padding:16px;overflow-x:auto;font-family:"Cascadia Code","Fira Code",Consolas,monospace;font-size:0.85em;line-height:1.6;tab-size:2;white-space:pre-wrap;word-break:break-all}
+  .cn{color:var(--com);font-style:italic}
+  .kw{color:#ff7b72}
+  .tp{color:#ffa657}
+  .fn{color:#d2a8ff}
+  .st{color:#a5d6ff}
+  .nu{color:#79c0ff}
+  .mc{color:#ffa657}
+  .hl{background:rgba(255,210,50,0.2);padding:1px 6px;border-radius:3px}
+  .hlr{background:rgba(255,80,80,0.2);padding:1px 6px;border-radius:3px}
+  .hlb{background:rgba(88,166,255,0.2);padding:1px 6px;border-radius:3px}
+  .exp{color:var(--text);font-size:0.92em}
+  .exp .q{color:var(--acc);font-weight:600}
+  .exp .a{color:var(--text);margin-left:8px}
+  table{width:100%;border-collapse:collapse;margin:12px 0}
+  th{background:var(--bdr);color:var(--acc);padding:8px 12px;text-align:left;font-weight:600;font-size:0.9em}
+  td{padding:8px 12px;border-bottom:1px solid var(--bdr);font-size:0.9em;vertical-align:top}
+  tr:hover td{background:rgba(255,255,255,0.02)}
+  .pagebreak{page-break-before:always}
+  .line-num{color:var(--com);user-select:none;display:inline-block;width:40px;text-align:right;margin-right:16px;font-size:0.82em}
+  .line-code{display:inline}
+  .line-row{display:flex}
+  .line-row:hover{background:rgba(255,255,255,0.03)}
+  @media print{body{background:#fff;color:#000;padding:0}:root{--bg:#fff;--card:#fff;--bdr:#ddd;--text:#222;--acc:#0366d6;--grn:#22863a;--red:#cb2431;--yel:#735c0f;--pur:#6f42c1;--com:#666}.code{background:#f6f8fa;border:1px solid #ddd}.block{border:1px solid #ddd}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>🎮 飞机大战 — 逐行代码讲解</h1>
+<p style="color:var(--yel);">每一行是什么意思、为什么这样写、删掉会怎样——答辩前把它看熟。</p>
+
+<!-- ===== LINE 1 ===== -->
+<h2>第 1 行</h2>
+<div class="block">
+<div class="code"><span class="mc">#define</span> NOMINMAX</div>
+</div>
+<div class="exp">
+<p><span class="q">这行是干嘛的？</span><span class="a">定义 NOMINMAX 宏。告诉后面要引入的 Windows 头文件：不要把 min 和 max 定义成宏。因为 Windows 的 &lt;windows.h&gt; 里有 <code>#define min(a,b) ((a)&lt;(b)?(a):(b))</code>，如果这个宏进来了，代码里所有的 min 函数调用都会被替换成宏展开，轻则语法错误，重则莫名其妙的行为。这行必须在所有 #include 之前。</span></p>
+<p><span class="q">答辩被问：</span><span class="a">"Windows SDK 里 min/max 是宏，会和我的代码冲突，所以用 NOMINMAX 禁止它们。"</span></p>
+</div>
+
+<h2>第 2-7 行</h2>
+<div class="block">
+<div class="code"><span class="mc">#include</span> <span class="st">&lt;graphics.h&gt;</span>    <span class="cn">// EasyX 绘图库</span>
+<span class="mc">#include</span> <span class="st">&lt;stdio.h&gt;</span>       <span class="cn">// sprintf_s 格式化字符串</span>
+<span class="mc">#include</span> <span class="st">&lt;stdlib.h&gt;</span>      <span class="cn">// rand() 随机数, srand() 随机种子</span>
+<span class="mc">#include</span> <span class="st">&lt;time.h&gt;</span>        <span class="cn">// time(NULL) 获取当前时间——当随机种子</span>
+<span class="mc">#include</span> <span class="st">&lt;math.h&gt;</span>        <span class="cn">// sinf() cosf() 三角函数——粒子360度飞溅</span>
+<span class="mc">#include</span> <span class="st">&lt;tchar.h&gt;</span>       <span class="cn">// TCHAR _T()——让字符串在Unicode/MBCS下都能编译</span></div>
+</div>
+<div class="exp">
+<p><span class="q">graphics.h 是什么？</span><span class="a">EasyX 的主头文件。里面声明了 initgraph(打开窗口)、solidcircle(画实心圆)、solidrectangle(画实心矩形)、outtextxy(输出文字)、FlushBatchDraw(双缓冲提交) 等所有绘图函数。没它啥都画不了。</span></p>
+<p><span class="q">tchar.h 是什么？</span><span class="a">Windows 提供的字符集兼容头文件。里面定义了 TCHAR 类型和 _T() 宏。当项目设成 Unicode 时，TCHAR 自动变成 wchar_t，_T("你好") 变成 L"你好"；当项目设成多字节时，TCHAR 变成 char，_T("你好") 就是 "你好"。写一次代码，两种字符集都能编译。</span></p>
+</div>
+
+<h2>第 9-10 行</h2>
+<div class="block">
+<div class="code"><span class="mc">#define</span> WINDOW_WIDTH  <span class="nu">720</span>    <span class="cn">// 窗口宽度：720像素</span>
+<span class="mc">#define</span> WINDOW_HEIGHT <span class="nu">960</span>    <span class="cn">// 窗口高度：960像素（竖屏比例，手机常见比例9:12≈3:4）</span></div>
+</div>
+<div class="exp">
+<p><span class="q">为什么用 #define 不用 int？</span><span class="a">宏在编译前由预处理器直接替换成数字，不占内存。改窗口大小只需改一处。而且在定义数组大小时，C 语言要求用常量表达式，#define 是编译期常量，可以用于数组声明。</span></p>
+</div>
+
+<h2>第 11-19 行</h2>
+<div class="block">
+<div class="code"><span class="mc">#define</span> MAX_BULLETS   <span class="nu">100</span>   <span class="cn">// 子弹池大小：同时最多100颗子弹在屏幕上</span>
+<span class="mc">#define</span> MAX_ENEMIES   <span class="nu">50</span>    <span class="cn">// 敌机池大小：同时最多50架敌机</span>
+<span class="mc">#define</span> MAX_PARTICLES <span class="nu">200</span>   <span class="cn">// 粒子池大小：同时最多200个爆炸粒子</span>
+<span class="mc">#define</span> MAX_STARS     <span class="nu">80</span>    <span class="cn">// 背景星星数量：80颗星星构成星空</span>
+<span class="mc">#define</span> PLAYER_SPEED  <span class="nu">6</span>     <span class="cn">// 玩家每帧移动像素数</span>
+<span class="mc">#define</span> BULLET_SPEED  <span class="nu">10</span>    <span class="cn">// 子弹每帧往上飞的像素数</span>
+<span class="mc">#define</span> SHOOT_CD      <span class="nu">8</span>     <span class="cn">// 射击冷却帧数：按空格后等8帧才能再射</span>
+<span class="mc">#define</span> INVINCIBLE    <span class="nu">90</span>    <span class="cn">// 无敌帧数：被撞后90帧不受伤害（约1.5秒）</span>
+<span class="mc">#define</span> MAX_LIVES     <span class="nu">3</span>     <span class="cn">// 最大生命值：3条命</span></div>
+</div>
+<div class="exp">
+<p><span class="q">SHOOT_CD=8 是要干嘛？</span><span class="a">没有冷却的话，按住空格每帧都会生成子弹，一秒就能射出60发，纯属子弹海——不好看也没技术含量。8帧冷却的意思是发完一轮子弹后至少要等8帧才能发下一轮，节奏刚刚好。</span></p>
+<p><span class="q">INVINCIBLE=90 => 1.5秒怎么算的？</span><span class="a">主循环末尾 Sleep(16) ≈ 每帧16毫秒 → 每秒约60帧。90帧 ÷ 60 = 1.5秒无敌时间。</span></p>
+</div>
+
+<h2>第 21-27 行</h2>
+<div class="block">
+<div class="code"><span class="mc">#define</span> ENEMY_SMALL  <span class="nu">0</span>    <span class="cn">// 小敌机标识</span>
+<span class="mc">#define</span> ENEMY_MEDIUM <span class="nu">1</span>    <span class="cn">// 中敌机标识</span>
+<span class="mc">#define</span> ENEMY_BIG    <span class="nu">2</span>    <span class="cn">// 大敌机标识</span>
+
+<span class="mc">#define</span> STATE_MENU     <span class="nu">0</span>    <span class="cn">// 状态-菜单</span>
+<span class="mc">#define</span> STATE_PLAYING  <span class="nu">1</span>    <span class="cn">// 状态-游戏中</span>
+<span class="mc">#define</span> STATE_GAMEOVER <span class="nu">2</span>    <span class="cn">// 状态-游戏结束</span></div>
+</div>
+<div class="exp">
+<p><span class="q">为什么不用 enum？</span><span class="a">用 enum 也可以——enum { ENEMY_SMALL, ENEMY_MEDIUM, ENEMY_BIG }。用 #define 是 C 语言的传统写法，更直观。答辩时提到"可以用 enum 改进"说明你有工程思维。</span></p>
+</div>
+
+<h2>第 29 行</h2>
+<div class="block">
+<div class="code"><span class="mc">#define</span> <span class="fn">KEY_DOWN</span>(vk) ((<span class="fn">GetAsyncKeyState</span>(vk) &amp; <span class="nu">0x8000</span>) ? <span class="nu">1</span> : <span class="nu">0</span>)</div>
+</div>
+<div class="exp">
+<p><span class="q">这是整个游戏最黑的一行，拆开讲：</span></p>
+<p><span class="a"><code>GetAsyncKeyState(vk)</code> 是 Windows API 函数，接收一个虚拟键码（比如 'A' 就是 65，VK_SPACE 就是 32），返回一个 SHORT 类型的值（16位整数）。这个值的最高位（第15位，即 0x8000）表示"这个键从上次调用后有没有被按过"。如果按了，最高位=1。</span></p>
+<p><span class="a"><code>& 0x8000</code> 是按位与操作——只保留返回值的最高位，其他位全部清零。结果要么是 0（键没按），要么是 0x8000（键按了）。</span></p>
+<p><span class="a"><code>? 1 : 0</code> 三目运算符——非零就返回 1，零就返回 0。所以最终 KEY_DOWN('A') 的返回值：按着=1，没按=0。</span></p>
+<p><span class="q">为什么不直接用 _kbhit()？</span><span class="a">_kbhit() 只能检测"有没有键被按下"，不能检测"A键是不是正在被按着"。射击游戏需要能检测按住不放的状态——按住空格连续射击、按住W持续向上飞。</span></p>
+</div>
+
+<h2>第 32-36 行 — 五个结构体</h2>
+<div class="block">
+<div class="code"><span class="kw">typedef struct</span> { <span class="tp">float</span> x,y; <span class="tp">int</span> w,h; <span class="tp">int</span> lives; <span class="tp">int</span> invTimer; <span class="tp">int</span> shootTimer; } <span class="tp">Player</span>;
+<span class="kw">typedef struct</span> { <span class="tp">float</span> x,y; <span class="tp">int</span> w,h; <span class="tp">int</span> active; } <span class="tp">Bullet</span>;
+<span class="kw">typedef struct</span> { <span class="tp">float</span> x,y; <span class="tp">int</span> w,h; <span class="tp">int</span> speed; <span class="tp">int</span> hp; <span class="tp">int</span> type; <span class="tp">int</span> active; } <span class="tp">Enemy</span>;
+<span class="kw">typedef struct</span> { <span class="tp">float</span> x,y; <span class="tp">float</span> vx,vy; <span class="tp">int</span> life,maxLife; <span class="tp">int</span> active; } <span class="tp">Particle</span>;
+<span class="kw">typedef struct</span> { <span class="tp">float</span> x,y; <span class="tp">int</span> speed,bright; } <span class="tp">Star</span>;</div>
+</div>
+<div class="exp">
+<p><span class="q">为什么坐标用 float 不用 int？</span><span class="a">float 可以表示小数位置。比如每帧移动 1.5 像素——int 做不到（要么 1 要么 2），float 可以。画图时再转成 int。所以移动是平滑的，不会一跳一跳。</span></p>
+<p><span class="q">为什么 Player 没有 active？</span><span class="a">玩家只有一架，永远活跃，不需要对象池管理。Bullet/Enemy/Particle 是多实例的，才需要 active 标记。</span></p>
+<p><span class="q">vx, vy 为什么是 float？</span><span class="a">粒子速度有小数分量（cosf/sinf 的结果是 -1.0~1.0 之间的小数），必须用 float 才能存住精度。</span></p>
+<p><span class="q">Star 为什么没有 active？</span><span class="a">80颗星星永远存在、永远活跃，不需要管理生命周期。直接全部遍历全部画。</span></p>
+</div>
+
+<h2>第 39-44 行 — 全局变量</h2>
+<div class="block">
+<div class="code"><span class="tp">Player</span>   g_player;                             <span class="cn">// 玩家飞机（全局唯一）</span>
+<span class="tp">Bullet</span>   g_bullets[MAX_BULLETS];             <span class="cn">// 子弹数组：100个槽位的对象池</span>
+<span class="tp">Enemy</span>    g_enemies[MAX_ENEMIES];             <span class="cn">// 敌机数组：50个槽位</span>
+<span class="tp">Particle</span> g_particles[MAX_PARTICLES];         <span class="cn">// 粒子数组：200个槽位</span>
+<span class="tp">Star</span>     g_stars[MAX_STARS];                 <span class="cn">// 星星数组：80颗</span>
+<span class="tp">int</span> g_score;           <span class="cn">// 当前分数</span>
+<span class="tp">int</span> g_highScore;       <span class="cn">// 历史最高分（游戏关闭前有效）</span>
+<span class="tp">int</span> g_state;           <span class="cn">// 游戏状态：0/1/2（对应MENU/PLAYING/GAMEOVER）</span>
+<span class="tp">int</span> g_enemySpawnTimer; <span class="cn">// 敌机生成倒计时，每帧+1，到spawnRate就生成</span>
+<span class="tp">int</span> g_enemySpawnRate;  <span class="cn">// 敌机生成间隔（帧），初始45，随分数减小</span>
+<span class="tp">int</span> g_frameCount;      <span class="cn">// 程序启动以来经过的总帧数，驱动所有动画</span></div>
+</div>
+<div class="exp">
+<p><span class="q">g_ 前缀是什么？</span><span class="a">匈牙利命名法——g 代表 global（全局）。一眼就能看出这是全局变量，不是函数内的局部变量。</span></p>
+<p><span class="q">g_frameCount 有什么作用？</span><span class="a">驱动动画周期。比如无敌闪烁用的是 `(g_frameCount/6)%2==0`——每6帧翻转一次可见性。引擎火焰用的是 `g_frameCount%10`——0到9循环，火焰长度周期性变化。如果没有全局帧号，每个动画都得自己维护一个计数器。</span></p>
+</div>
+
+<h2>第 47-48 行</h2>
+<div class="block">
+<div class="code"><span class="kw">static</span> <span class="tp">int</span> <span class="fn">imin</span>(<span class="tp">int</span> a,<span class="tp">int</span> b){<span class="kw">return</span> a&lt;b?a:b;}
+<span class="kw">static</span> <span class="tp">int</span> <span class="fn">imax</span>(<span class="tp">int</span> a,<span class="tp">int</span> b){<span class="kw">return</span> a&gt;b?a:b;}</div>
+</div>
+<div class="exp">
+<p><span class="q">为什么叫 imin 不叫 min？</span><span class="a">因为 Windows.h 已经把 min 和 max 占成宏了。虽然第1行定义了 NOMINMAX 阻止它们，但为了绝对安全，我还是用 imin/imax 避开所有可能的命名冲突。i 前缀表示 integer——只处理整数的 min/max。</span></p>
+<p><span class="q">static 是干嘛的？</span><span class="a">限制函数作用域——这两个函数只在当前 .cpp 文件内可见，不会和其他文件的同名函数冲突。虽然没有其他文件，但加 static 是好习惯。</span></p>
+</div>
+
+<div class="pagebreak"></div>
+<h2>第 50-56 行 — initStars()</h2>
+<div class="block">
+<div class="code"><span class="kw">void</span> <span class="fn">initStars</span>(){
+    <span class="kw">for</span>(<span class="tp">int</span> i=<span class="nu">0</span>; i&lt;MAX_STARS; i++){
+        g_stars[i].x=(<span class="tp">float</span>)(<span class="fn">rand</span>()%WINDOW_WIDTH);   <span class="cn">// ① X坐标：0到719随机</span>
+        g_stars[i].y=(<span class="tp">float</span>)(<span class="fn">rand</span>()%WINDOW_HEIGHT);  <span class="cn">// ② Y坐标：0到959随机</span>
+        g_stars[i].speed=<span class="fn">rand</span>()%<span class="nu">3</span>+<span class="nu">1</span>;                  <span class="cn">// ③ 速度：1,2,3随机（3最快=近星）</span>
+        g_stars[i].bright=<span class="fn">rand</span>()%<span class="nu">156</span>+<span class="nu">100</span>;             <span class="cn">// ④ 亮度：100~255随机</span>
+    }
+}</div>
+</div>
+<div class="exp">
+<p><span class="q">rand()%WINDOW_WIDTH 是什么意思？</span><span class="a">rand() 返回 0~32767 的随机整数，%720（取模）把它限制到 0~719。配合窗口宽度刚好覆盖全屏。+ (float) 强制类型转换——因为 x 和 y 字段是 float 类型。</span></p>
+<p><span class="q">speed 1/2/3 的设计意图？</span><span class="a">三层视差滚动。speed=1 的星最慢→给人"很遥远"的感觉；speed=3 的星最快→"比较近"。画的时候，近星更亮更大，远星更暗更小。三层的组合让星空有纵深感，不是平板一张。这是游戏开发里最古老也最好用的背景技巧。</span></p>
+<p><span class="q">bright 为什么是 rand()%156+100 而不是 rand()%256？</span><span class="a">rand()%256 会产生 0~255，但速度1的远星亮度还要除以3，如果本来就只有 10 的亮度，一除就成 3 了——几乎看不见。+100 保证最小亮度 100，保证远星也能看到。</span></p>
+</div>
+
+<h2>第 59-68 行 — initGame()</h2>
+<div class="block">
+<div class="code"><span class="kw">void</span> <span class="fn">initGame</span>(){
+    g_player.x = WINDOW_WIDTH/<span class="nu">2.0f</span>;        <span class="cn">// ① 玩家X = 屏幕水平中心</span>
+    g_player.y = WINDOW_HEIGHT-<span class="nu">120.0f</span>;     <span class="cn">// ② 玩家Y = 屏幕底部往上120像素</span>
+    g_player.w = <span class="nu">50</span>; g_player.h = <span class="nu">60</span>;          <span class="cn">// ③ 碰撞体积：宽50高60</span>
+    g_player.lives = MAX_LIVES;             <span class="cn">// ④ 3条命</span>
+    g_player.invTimer = <span class="nu">60</span>;                <span class="cn">// ⑤ 开局60帧无敌（新手保护）</span>
+    g_player.shootTimer = <span class="nu">0</span>;               <span class="cn">// ⑥ 可以立即射击</span>
+
+    <span class="kw">for</span>(<span class="tp">int</span> i=<span class="nu">0</span>;i&lt;MAX_BULLETS;i++)   g_bullets[i].active=<span class="nu">0</span>;   <span class="cn">// ⑦ 所有子弹标记为空闲</span>
+    <span class="kw">for</span>(<span class="tp">int</span> i=<span class="nu">0</span>;i&lt;MAX_ENEMIES;i++)   g_enemies[i].active=<span class="nu">0</span>;   <span class="cn">// ⑧ 所有敌机标记为空闲</span>
+    <span class="kw">for</span>(<span class="tp">int</span> i=<span class="nu">0</span>;i&lt;MAX_PARTICLES;i++) g_particles[i].active=<span class="nu">0</span>; <span class="cn">// ⑨ 所有粒子标记为空闲</span>
+
+    g_score=<span class="nu">0</span>;                               <span class="cn">// ⑩ 分数归零</span>
+    g_enemySpawnTimer=<span class="nu">0</span>;                    <span class="cn">// ⑪ 敌机生成倒计时归零</span>
+    g_enemySpawnRate=<span class="nu">45</span>;                     <span class="cn">// ⑫ 初始每45帧生成一架敌机</span>
+    g_frameCount=<span class="nu">0</span>;                          <span class="cn">// ⑬ 帧号归零</span>
+    <span class="fn">initStars</span>();                          <span class="cn">// ⑭ 重新撒星星</span>
+}</div>
+</div>
+<div class="exp">
+<p><span class="q">为什么开局要60帧无敌？</span><span class="a">防止"开局杀"——敌机从屏幕顶出来时玩家还没反应过来就撞上了。给1秒的无敌时间让玩家有一个适应的缓冲。</span></p>
+<p><span class="q">initGame 什么时候被调用？</span><span class="a">三处：程序启动初始化一次、菜单按空格开始新游戏、结束画面按R重来、游戏中按Q回菜单后再按空格。</span></p>
+</div>
+
+<h2>第 71-82 行 — 对象池的三个函数</h2>
+<div class="block">
+<div class="code"><span class="tp">Bullet</span>* <span class="fn">getFreeBullet</span>(){
+    <span class="kw">for</span>(<span class="tp">int</span> i=<span class="nu">0</span>; i&lt;MAX_BULLETS; i++)   <span class="cn">// 遍历整个子弹数组</span>
+        <span class="kw">if</span>(!g_bullets[i].active)            <span class="cn">// active==0 → 这个槽位空闲</span>
+            <span class="kw">return</span> &amp;g_bullets[i];           <span class="cn">// 返回这个槽位的地址！调用方直接往里填数据</span>
+    <span class="kw">return</span> <span class="nu">NULL</span>;  <span class="cn">// 遍历完都找不到空闲的 → 池满了</span>
+}</div>
+</div>
+<div class="exp">
+<p><span class="q">!g_bullets[i].active 为什么不用 ==0？</span><span class="a">! 是逻辑非运算符，!0=1(真)，!1=0(假)。!active 等价于 active==0，但更简洁。这是 C 语言的惯用写法。</span></p>
+<p><span class="q">&g_bullets[i] 返回的是什么？</span><span class="a">取地址运算符 &——返回数组第 i 个元素的指针。调用方拿到这个指针后通过 b->x, b->y, b->active=1 直接修改数组里的数据，不需要复制任何东西。</span></p>
+<p><span class="q">三个 getFree 函数能合并成一个通用的吗？</span><span class="a">能。用一个函数接受数组指针、元素大小、数组长度，返回 void*。但那样需要在调用方做类型转换，代码可读性下降。三个独立函数的代码重复量很小（每人3行），换来的是类型安全和可读性。</span></p>
+</div>
+
+<h2>第 85-88 行 — spawnBullet()</h2>
+<div class="block">
+<div class="code"><span class="kw">void</span> <span class="fn">spawnBullet</span>(){
+    <span class="tp">Bullet</span>*b=<span class="fn">getFreeBullet</span>(); <span class="kw">if</span>(!b)<span class="kw">return</span>;     <span class="cn">// ① 申请槽位；没空位就算了</span>
+    b-&gt;x=g_player.x;                         <span class="cn">// ② 子弹X = 玩家当前X（子弹从飞机发出）</span>
+    b-&gt;y=g_player.y - g_player.h/<span class="nu">2</span>;         <span class="cn">// ③ 子弹Y = 玩家Y减去半个身高 = 机头位置</span>
+    b-&gt;w=<span class="nu">6</span>; b-&gt;h=<span class="nu">14</span>; b-&gt;active=<span class="nu">1</span>;               <span class="cn">// ④ 碰撞体积：宽6高14；激活！</span>
+}</div>
+</div>
+<div class="exp">
+<p><span class="q">子弹怎么变成双发的？</span><span class="a">看 updatePlayer() 里的调用：</span></p>
+</div>
+<div class="block">
+<div class="code"><span class="tp">float</span> sx = g_player.x;     <span class="cn">// 保存玩家当前 X</span>
+g_player.x = sx-<span class="nu">10</span>;       <span class="cn">// 假装玩家往左偏10像素</span>
+<span class="fn">spawnBullet</span>();           <span class="cn">// 发出左翼子弹（子弹X=玩家X-10）</span>
+g_player.x = sx+<span class="nu">10</span>;       <span class="cn">// 假装玩家往右偏10像素</span>
+<span class="fn">spawnBullet</span>();           <span class="cn">// 发出右翼子弹（子弹X=玩家X+10）</span>
+g_player.x = sx;           <span class="cn">// 恢复玩家真实位置</span></div>
+</div>
+<div class="exp">
+<p><span class="q">这招好巧妙——不用给 spawnBullet 传参数，直接临时修改玩家坐标再改回来，两发子弹自然就偏左偏右。</span></p>
+</div>
+
+<h2>第 89-97 行 — spawnEnemy()</h2>
+<div class="block">
+<div class="code"><span class="kw">void</span> <span class="fn">spawnEnemy</span>(){
+    <span class="tp">Enemy</span>*e=<span class="fn">getFreeEnemy</span>(); <span class="kw">if</span>(!e)<span class="kw">return</span>;
+    <span class="tp">int</span> r=<span class="fn">rand</span>()%<span class="nu">100</span>;  <span class="cn">// 0~99随机数，用于概率分布</span>
+    <span class="kw">if</span>(r&lt;<span class="nu">70</span>){          <span class="cn">// r=0~69：70%概率 → 小敌机</span>
+        e-&gt;type=ENEMY_SMALL; e-&gt;w=<span class="nu">30</span>;e-&gt;h=<span class="nu">30</span>; e-&gt;speed=<span class="fn">rand</span>()%<span class="nu">3</span>+<span class="nu">3</span>; e-&gt;hp=<span class="nu">1</span>;
+    }<span class="kw">else if</span>(r&lt;<span class="nu">90</span>){ <span class="cn">// r=70~89：20%概率 → 中敌机</span>
+        e-&gt;type=ENEMY_MEDIUM; e-&gt;w=<span class="nu">40</span>;e-&gt;h=<span class="nu">40</span>; e-&gt;speed=<span class="fn">rand</span>()%<span class="nu">2</span>+<span class="nu">2</span>; e-&gt;hp=<span class="nu">2</span>;
+    }<span class="kw">else</span>{            <span class="cn">// r=90~99：10%概率 → 大敌机</span>
+        e-&gt;type=ENEMY_BIG; e-&gt;w=<span class="nu">55</span>;e-&gt;h=<span class="nu">55</span>; e-&gt;speed=<span class="nu">1</span>; e-&gt;hp=<span class="nu">4</span>;
+    }
+    e-&gt;x=(<span class="tp">float</span>)(<span class="fn">rand</span>()%(WINDOW_WIDTH-e-&gt;w)+e-&gt;w/<span class="nu">2</span>);  <span class="cn">// X随机但不超出边界</span>
+    e-&gt;y=(<span class="tp">float</span>)(-e-&gt;h);   <span class="cn">// Y = 负的身高 = 从屏幕顶外飞入</span>
+    e-&gt;active=<span class="nu">1</span>;
+}</div>
+</div>
+<div class="exp">
+<p><span class="q">rand()%100 的分布？</span><span class="a">rand()%100 返回 0~99，每个数字等概率。所以 r<70 的概率就是 70/100=70%。这样三种敌机的出现比例是 7:2:1。</span></p>
+<p><span class="q">WINDOW_WIDTH - e->w 是怎么回事？</span><span class="a">假设窗口宽 720，大敌机宽 55。如果 X 随机到 700，右半边就超出屏幕了。rand()%(720-55) 限制随机范围最大 665。加 e->w/2=27 后 X 范围是 27~692——敌机最左到 27、最右到 692，刚好不出界。</span></p>
+<p><span class="q">e->y = -e->h 是干嘛？</span><span class="a">大敌机高度 55，起始 Y = -55——在屏幕顶部外55像素。下落过程中逐渐进入画面，玩家看不到"凭空出现"的感觉。所有 2D 射击游戏都这么做。</span></p>
+</div>
+
+<div class="pagebreak"></div>
+<h2>第 98-107 行 — spawnExplosion() ⭐</h2>
+<div class="block">
+<div class="code"><span class="kw">void</span> <span class="fn">spawnExplosion</span>(<span class="tp">float</span> x,<span class="tp">float</span> y,<span class="tp">int</span> count){
+    <span class="kw">for</span>(<span class="tp">int</span> i=<span class="nu">0</span>; i&lt;count; i++){                  <span class="cn">// 生成 count 个粒子</span>
+        <span class="tp">Particle</span>*p=<span class="fn">getFreeParticle</span>(); <span class="kw">if</span>(!p)<span class="kw">break</span>;  <span class="cn">// 申请槽位；池满了停止生成</span>
+        p-&gt;x=x; p-&gt;y=y;                      <span class="cn">// ① 粒子的起始位置 = 爆炸中心</span>
+
+        <span class="tp">float</span> angle=(<span class="tp">float</span>)(<span class="fn">rand</span>()%<span class="nu">360</span>)*<span class="nu">3.14159f</span>/<span class="nu">180.0f</span>;  <span class="cn">// ② 随机角度 (度→弧度)</span>
+        <span class="tp">float</span> speed=(<span class="tp">float</span>)(<span class="fn">rand</span>()%<span class="nu">5</span>)+<span class="nu">2.0f</span>;                <span class="cn">// ③ 随机速度 2.0~6.0</span>
+        p-&gt;vx=<span class="fn">cosf</span>(angle)*speed;                 <span class="cn">// ④ X方向速度 = cos(角度)×速度</span>
+        p-&gt;vy=<span class="fn">sinf</span>(angle)*speed;                 <span class="cn">// ⑤ Y方向速度 = sin(角度)×速度</span>
+
+        p-&gt;maxLife=<span class="fn">rand</span>()%<span class="nu">20</span>+<span class="nu">15</span>;                <span class="cn">// ⑥ 总寿命：15~35帧 (0.25~0.6秒)</span>
+        p-&gt;life=p-&gt;maxLife;                    <span class="cn">// ⑦ 当前寿命初始 = 总寿命</span>
+        p-&gt;active=<span class="nu">1</span>;                            <span class="cn">// ⑧ 激活这个粒子</span>
+    }
+}</div>
+</div>
+<div class="exp">
+<p><span class="q">角度为什么要乘 3.14159/180？</span><span class="a">计算机的三角函数（cosf, sinf）接受的是弧度制，不是角度制。0~360° 对应 0~2π 弧度。要把角度转成弧度：弧度 = 角度 × π / 180。π ≈ 3.14159。</span></p>
+<p><span class="q">cosf(angle)*speed 干了什么？</span><span class="a">cos 函数返回"单位圆上该角度对应的X坐标"。比如 angle=0° 时 cos=1.0(正右)、angle=90°时 cos=0(无水平分量)、angle=180°时 cos=-1.0(正左)。乘以 speed 之后：如果 speed=5、angle=0°，粒子往正右方以5像素/帧的速度飞。</span></p>
+<p><span class="q">为什么 speed 是 2.0~6.0 不是 0~5？</span><span class="a">+2.0 保证最小速度是2——太慢的话粒子像挂在空中一样，不像爆炸。这是多次调试后的经验值。</span></p>
+<p><span class="q">maxLife 为什么是 15~35？</span><span class="a">太短了（<10帧）看不出颜色渐变，太长了（>50帧）粒子飞到屏幕外面浪费性能。15~35是视觉效果和性能的平衡。</span></p>
+<p><span class="q">答辩时怎么说这5行？</span><span class="a">"spawnExplosion 是粒子系统的核心。每个粒子三个随机属性——发射方向、初速度、寿命。方向用三角函数拆成水平分量和垂直分量，寿命用来控制后续的颜色渐变。这是游戏特效最基础的实现方式。"</span></p>
+</div>
+
+<h2>第 110-125 行 — updatePlayer()</h2>
+<div class="block">
+<div class="code"><span class="kw">void</span> <span class="fn">updatePlayer</span>(){
+    <span class="kw">if</span>(<span class="fn">KEY_DOWN</span>(<span class="st">'A'</span>)||<span class="fn">KEY_DOWN</span>(VK_LEFT))  g_player.x-=PLAYER_SPEED;    <span class="cn">// A或←：左移6像素</span>
+    <span class="kw">if</span>(<span class="fn">KEY_DOWN</span>(<span class="st">'D'</span>)||<span class="fn">KEY_DOWN</span>(VK_RIGHT)) g_player.x+=PLAYER_SPEED;    <span class="cn">// D或→：右移6像素</span>
+    <span class="kw">if</span>(<span class="fn">KEY_DOWN</span>(<span class="st">'W'</span>)||<span class="fn">KEY_DOWN</span>(VK_UP))    g_player.y-=PLAYER_SPEED;    <span class="cn">// W或↑：上移6像素</span>
+    <span class="kw">if</span>(<span class="fn">KEY_DOWN</span>(<span class="st">'S'</span>)||<span class="fn">KEY_DOWN</span>(VK_DOWN))  g_player.y+=PLAYER_SPEED;    <span class="cn">// S或↓：下移6像素</span></div>
+</div>
+<div class="exp">
+<p><span class="q">为什么 A 和 VK_LEFT 都检测？</span><span class="a">'A' 是字符键（ASCII=65），VK_LEFT 是虚拟键码（=37，对应键盘上的左箭头）。有些玩家习惯 WASD（PC 游戏玩家），有些习惯方向键（休闲玩家）。同时检测两种操作方式，不用教任何人改习惯。</span></p>
+</div>
+
+<div class="block">
+<div class="code">    g_player.x=(<span class="tp">float</span>)<span class="fn">imax</span>(g_player.w/<span class="nu">2</span>, <span class="fn">imin</span>(WINDOW_WIDTH-g_player.w/<span class="nu">2</span>, (<span class="tp">int</span>)g_player.x));</div>
+</div>
+<div class="exp">
+<p><span class="q">这一行很绕，拆开读：</span></p>
+<p><span class="a">① <code>(int)g_player.x</code> — 把玩家当前X坐标（float）截断成 int。</span></p>
+<p><span class="a">② <code>imin(WINDOW_WIDTH - g_player.w/2, ①)</code> — 取"右边界允许的最大X"和"玩家当前X"中较小的那个。WINDOW_WIDTH-w/2 = 720-25 = 695。如果玩家走到700，imin返回695（被拦住）。如果玩家在300，imin返回300（没事）。这就防止了飞机超出右边界。</span></p>
+<p><span class="a">③ <code>imax(g_player.w/2, ②)</code> — 取"左边界允许的最小X=25"和"②的结果"中较大的那个。如果②是10，imax返回25（被拦住）。如果②是300，imax返回300（没事）。这就防止了飞机超出左边界。</span></p>
+<p><span class="q">效果：玩家X被钳制在 [25, 695] 之间，永远不超出屏幕。</span></p>
+</div>
+
+<div class="block">
+<div class="code">    <span class="kw">if</span>(g_player.shootTimer&gt;<span class="nu">0</span>) g_player.shootTimer--;     <span class="cn">// 冷却倒计时-1</span>
+
+    <span class="kw">if</span>(<span class="fn">KEY_DOWN</span>(VK_SPACE) &amp;&amp; g_player.shootTimer&lt;=<span class="nu">0</span>){   <span class="cn">// 空格按着 + 冷却完毕</span>
+        <span class="tp">float</span> sx=g_player.x;                     <span class="cn">// 备份当前X</span>
+        g_player.x=sx-<span class="nu">10</span>; <span class="fn">spawnBullet</span>();       <span class="cn">// 左翼子弹</span>
+        g_player.x=sx+<span class="nu">10</span>; <span class="fn">spawnBullet</span>();       <span class="cn">// 右翼子弹</span>
+        g_player.x=sx;                          <span class="cn">// 恢复X</span>
+        g_player.shootTimer=SHOOT_CD;           <span class="cn">// 重置冷却=8帧</span>
+    }
+
+    <span class="kw">if</span>(g_player.invTimer&gt;<span class="nu">0</span>) g_player.invTimer--;        <span class="cn">// 无敌倒计时-1</span>
+}</div>
+</div>
+<div class="exp">
+<p><span class="q">SHOOT_CD=8意味着什么？</span><span class="a">每8帧才能射击一次。8÷60≈0.13秒，一秒大约射7轮，每轮2发子弹=14发。没有冷却的话一秒60发。这个值可以调——数字越小射越快。</span></p>
+</div>
+
+<h2>第 127-133 行 — updateBullets()</h2>
+<div class="block">
+<div class="code"><span class="kw">void</span> <span class="fn">updateBullets</span>(){
+    <span class="kw">for</span>(<span class="tp">int</span> i=<span class="nu">0</span>; i&lt;MAX_BULLETS; i++){
+        <span class="kw">if</span>(!g_bullets[i].active) <span class="kw">continue</span>;         <span class="cn">// 跳过不活跃的（绝大多数都是不活跃的）</span>
+        g_bullets[i].y -= BULLET_SPEED;           <span class="cn">// 往上飞（Y减小）</span>
+        <span class="kw">if</span>(g_bullets[i].y &lt; -<span class="nu">20</span>)                   <span class="cn">// 顶部外20像素</span>
+            g_bullets[i].active = <span class="nu">0</span>;              <span class="cn">// 回收这颗子弹</span>
+    }
+}</div>
+</div>
+<div class="exp">
+<p><span class="q">continue 在这里非常关键：</span><span class="a">100颗子弹里，活跃的可能就5~10颗。continue 跳过后面的移动和边界检查，直接进入下一轮循环。没有 continue 的话，每次循环都要访问不活跃的子弹——100次全遍历比5次遍历慢20倍。</span></p>
+<p><span class="q">为什么是 -20 不是 0？</span><span class="a">Y=0 是屏幕顶部。多给20像素的缓冲——子弹飞出屏幕外一点点再回收，视觉上不会有子弹突然消失的感觉。</span></p>
+</div>
+
+<h2>第 135-148 行 — updateEnemies()</h2>
+<div class="block">
+<div class="code"><span class="kw">void</span> <span class="fn">updateEnemies</span>(){
+    <span class="kw">for</span>(<span class="tp">int</span> i=<span class="nu">0</span>; i&lt;MAX_ENEMIES; i++){
+        <span class="kw">if</span>(!g_enemies[i].active) <span class="kw">continue</span>;
+        g_enemies[i].y += (<span class="tp">float</span>)g_enemies[i].speed;  <span class="cn">// 往下落</span>
+        <span class="kw">if</span>(g_enemies[i].y &gt; WINDOW_HEIGHT+<span class="nu">60</span>)        <span class="cn">// 飞出屏幕底</span>
+            g_enemies[i].active=<span class="nu">0</span>;
+        <span class="kw">if</span>(g_enemies[i].type == ENEMY_BIG)              <span class="cn">// 只有大敌机左右摇摆</span>
+            g_enemies[i].x += <span class="fn">sinf</span>((<span class="tp">float</span>)g_frameCount*<span class="nu">0.05f</span>+(<span class="tp">float</span>)i)*<span class="nu">1.5f</span>;
+    }</div>
+</div>
+<div class="exp">
+<p><span class="q">sinf(...) * 1.5f 在干嘛？</span><span class="a">sine 函数的输出是 -1 到 1 之间连续波动的值。乘以 1.5 之后，这个值在 -1.5 到 +1.5 之间平滑波动——大敌机每一帧的 X 坐标就加这个波动值，效果就是缓慢的左右摇摆。g_frameCount*0.05 控制摇摆速度（0.05越小越慢），+(float)i 让每架大敌机摇摆的相位不同——不会所有大敌机同步摇摆。</span></p>
+</div>
+
+<div class="block">
+<div class="code">    g_enemySpawnTimer++;                             <span class="cn">// 生成倒计时+1</span>
+    <span class="kw">if</span>(g_enemySpawnTimer &gt;= g_enemySpawnRate){        <span class="cn">// 倒计时到了</span>
+        g_enemySpawnTimer=<span class="nu">0</span>; <span class="fn">spawnEnemy</span>();           <span class="cn">// 生成一架敌机，重置计时器</span>
+        g_enemySpawnRate = <span class="fn">imax</span>(<span class="nu">15</span>, <span class="nu">45</span> - g_score/<span class="nu">500</span>); <span class="cn">// 更新生成间隔</span>
+    }
+}</div>
+</div>
+<div class="exp">
+<p><span class="q">难度曲线是怎么算的？</span><span class="a">初始 spawnRate=45帧。得分500 → 45-1=44帧。得分1000 → 45-2=43帧。得分2250 → 45-4=41帧……以此类推。imax(15, ...) 限制下限——最短15帧生成一架。所以难度是平滑线性上升的，不是突然变难。参数可以调：45和500决定了难度曲线斜率和起点，15是难度上限。</span></p>
+</div>
+
+<h2>第 150-159 行 — updateParticles()</h2>
+<div class="block">
+<div class="code"><span class="kw">void</span> <span class="fn">updateParticles</span>(){
+    <span class="kw">for</span>(<span class="tp">int</span> i=<span class="nu">0</span>; i&lt;MAX_PARTICLES; i++){
+        <span class="kw">if</span>(!g_particles[i].active) <span class="kw">continue</span>;
+        g_particles[i].x  += g_particles[i].vx;    <span class="cn">// ① 沿X方向移动</span>
+        g_particles[i].y  += g_particles[i].vy;    <span class="cn">// ② 沿Y方向移动</span>
+        g_particles[i].vy += <span class="nu">0.15f</span>;               <span class="cn">// ③ 重力加速度：Y方向速度每帧+0.15</span>
+        g_particles[i].life--;                     <span class="cn">// ④ 寿命-1</span>
+        <span class="kw">if</span>(g_particles[i].life &lt;= <span class="nu">0</span>)                <span class="cn">// ⑤ 寿终</span>
+            g_particles[i].active = <span class="nu">0</span>;             <span class="cn">// ⑥ 回收</span>
+    }
+}</div>
+</div>
+<div class="exp">
+<p><span class="q">vy += 0.15f 模拟了什么？</span><span class="a">重力！抛出物体后，垂直速度在重力作用下不断向下偏转。粒子初始可能往上飞（vy是负的），但在重力作用下慢慢减速、变向、往下掉。0.15 是重力强度——越大粒子越快往下掉。这是一个非常简单的物理模拟。</span></p>
+<p><span class="q">为什么只有 vy 受重力，vx 没有？</span><span class="a">重力只拉向下，不影响水平方向。如果 vx 也受重力就是不物理了。当然为了视觉效果也可以给 vx 加一点空气阻力（vx *= 0.99），但不加也够用了。</span></p>
+</div>
+
+<h2>第 161-166 行 — updateStars()</h2>
+<div class="block">
+<div class="code"><span class="kw">void</span> <span class="fn">updateStars</span>(){
+    <span class="kw">for</span>(<span class="tp">int</span> i=<span class="nu">0</span>; i&lt;MAX_STARS; i++){
+        g_stars[i].y += (<span class="tp">float</span>)g_stars[i].speed;                <span class="cn">// 星星向下滚动</span>
+        <span class="kw">if</span>(g_stars[i].y &gt; WINDOW_HEIGHT){                      <span class="cn">// 滚出屏幕底</span>
+            g_stars[i].y = <span class="nu">0</span>;                                   <span class="cn">// 回到顶部</span>
+            g_stars[i].x = (<span class="tp">float</span>)(<span class="fn">rand</span>()%WINDOW_WIDTH);        <span class="cn">// 换个随机X位置</span>
+        }
+    }
+}</div>
+</div>
+<div class="exp">
+<p><span class="q">为什么重置时要重新随机 X？</span><span class="a">如果 X 不变，星星就永远在同一竖线上——几秒钟后就会发现星空是"条纹状"的。重新随机 X 让每一轮循环的星空分布都不一样，看起来是无限的。</span></p>
+</div>
+
+<div class="pagebreak"></div>
+<h2>第 169-173 行 — checkCollision() ⭐⭐⭐</h2>
+<div class="block">
+<div class="code"><span class="tp">int</span> <span class="fn">checkCollision</span>(<span class="tp">float</span> x1,<span class="tp">float</span> y1,<span class="tp">int</span> w1,<span class="tp">int</span> h1,
+                   <span class="tp">float</span> x2,<span class="tp">float</span> y2,<span class="tp">int</span> w2,<span class="tp">int</span> h2){
+    <span class="tp">float</span> l1 = x1 - w1/<span class="nu">2.0f</span>, r1 = x1 + w1/<span class="nu">2.0f</span>;  <span class="cn">// 物体1左边界 = 中心X - 半宽</span>
+    <span class="tp">float</span> t1 = y1 - h1/<span class="nu">2.0f</span>, b1 = y1 + h1/<span class="nu">2.0f</span>;  <span class="cn">// 物体1上边界 = 中心Y - 半高</span>
+                                                    <span class="cn">// 物体1右边界 = 中心X + 半宽</span>
+                                                    <span class="cn">// 物体1下边界 = 中心Y + 半高</span>
+    <span class="tp">float</span> l2 = x2 - w2/<span class="nu">2.0f</span>, r2 = x2 + w2/<span class="nu">2.0f</span>;  <span class="cn">// 物体2四条边，同上</span>
+    <span class="tp">float</span> t2 = y2 - h2/<span class="nu">2.0f</span>, b2 = y2 + h2/<span class="nu">2.0f</span>;
+
+    <span class="kw">return</span> (l1 &lt; r2 &amp;&amp; r1 &gt; l2 &amp;&amp;    <span class="cn">// ① X轴重叠判断</span>
+            t1 &lt; b2 &amp;&amp; b1 &gt; t2);      <span class="cn">// ② Y轴重叠判断</span>
+}</div>
+</div>
+<div class="exp">
+<p><span class="q">一行一行解释：</span></p>
+<table>
+<tr><td style="white-space:nowrap"><code>l1 = x1 - w1/2.0f</code></td><td>物体中心X往左走半个宽度 = 物体的最左边缘</td></tr>
+<tr><td><code>r1 = x1 + w1/2.0f</code></td><td>物体中心X往右走半个宽度 = 物体的最右边缘</td></tr>
+<tr><td><code>t1 = y1 - h1/2.0f</code></td><td>物体中心Y往上走半个高度 = 物体的最上边缘。注意屏幕坐标系Y轴向下，所以 t1 比 y1 小</td></tr>
+<tr><td><code>b1 = y1 + h1/2.0f</code></td><td>物体中心Y往下走半个高度 = 物体的最下边缘</td></tr>
+<tr><td><code>l1 &lt; r2</code></td><td>物体1的左边在物体2的右边之左。如果这个都不成立（l1≥r2），说明物体1完全在物体2右边→不可能重叠</td></tr>
+<tr><td><code>r1 &gt; l2</code></td><td>物体1的右边在物体2的左边之右。配合上一条→X轴方向上有重叠</td></tr>
+<tr><td><code>t1 &lt; b2 &amp;&amp; b1 &gt; t2</code></td><td>同理，Y轴方向上有重叠</td></tr>
+<tr><td>四个条件同时成立</td><td>→ 碰撞！</td></tr>
+</table>
+<p><span class="q">答辩时如果老师让画图：</span><span class="a">画两个重叠的矩形，标上 l1/r1/t1/b1 和 l2/r2/t2/b2。然后分别指出X轴和Y轴的投影重叠情况。这是得分最高的部分。</span></p>
+</div>
+
+<h2>第 175-198 行 — checkBulletEnemyCollisions()</h2>
+<div class="block">
+<div class="code"><span class="kw">void</span> <span class="fn">checkBulletEnemyCollisions</span>(){
+    <span class="kw">for</span>(<span class="tp">int</span> i=<span class="nu">0</span>;i&lt;MAX_BULLETS;i++){              <span class="cn">// 外层：遍历所有子弹</span>
+        <span class="kw">if</span>(!g_bullets[i].active)<span class="kw">continue</span>;
+        <span class="kw">for</span>(<span class="tp">int</span> j=<span class="nu">0</span>;j&lt;MAX_ENEMIES;j++){          <span class="cn">// 内层：遍历所有敌机</span>
+            <span class="kw">if</span>(!g_enemies[j].active)<span class="kw">continue</span>;
+            <span class="kw">if</span>(<span class="fn">checkCollision</span>(...)){              <span class="cn">// 这颗子弹和这架敌机碰撞了！</span>
+                g_bullets[i].active=<span class="nu">0</span>;            <span class="cn">// ① 子弹消失</span>
+                g_enemies[j].hp--;                 <span class="cn">// ② 敌机扣血</span>
+                <span class="fn">spawnExplosion</span>(...,<span class="nu">3</span>);            <span class="cn">// ③ 命中火花（3个粒子）</span>
+                <span class="kw">if</span>(g_enemies[j].hp&lt;=<span class="nu">0</span>){               <span class="cn">// ④ 敌机没血了</span>
+                    <span class="cn">// 根据类型决定爆炸粒子数量</span>
+                    <span class="tp">int</span> cnt=(g_enemies[j].type==ENEMY_BIG)?<span class="nu">40</span>:
+                           (g_enemies[j].type==ENEMY_MEDIUM)?<span class="nu">20</span>:<span class="nu">10</span>;
+                    <span class="fn">spawnExplosion</span>(...,cnt);          <span class="cn">// ⑤ 爆炸</span>
+                    <span class="kw">switch</span>(g_enemies[j].type){           <span class="cn">// ⑥ 加分</span>
+                    <span class="kw">case</span> ENEMY_SMALL: g_score+=<span class="nu">10</span>; <span class="kw">break</span>;
+                    <span class="kw">case</span> ENEMY_MEDIUM:g_score+=<span class="nu">20</span>; <span class="kw">break</span>;
+                    <span class="kw">case</span> ENEMY_BIG:   g_score+=<span class="nu">50</span>; <span class="kw">break</span>;
+                    }
+                    g_enemies[j].active=<span class="nu">0</span>;          <span class="cn">// ⑦ 回收敌机</span>
+                }
+                <span class="kw">break</span>;  <span class="cn">// ⑧ 关键！一颗子弹只打一架，跳出内循环</span>
+            }
+        }
+    }
+}</div>
+</div>
+<div class="exp">
+<p><span class="q">那个 break 为什么关键？</span><span class="a">没有 break 的话，一颗子弹碰到第一架敌机之后，还会继续检查后面的敌机——可能一颗子弹打死好几架。这不是我们想要的效果。break 让子弹打中一架敌机后立刻退出内循环，进入下一颗子弹的检测。</span></p>
+<p><span class="q">嵌套的三元运算符 cnt=...?...:... 怎么读？</span><span class="a">"如果是大敌机→40，否则如果是中敌机→20，否则→10"。嵌套三元可读性不好，答辩时可以说"这里用 if-else 更清晰，需要改进"——展现代码审美。</span></p>
+</div>
+
+<h2>第 200-218 行 — checkPlayerEnemyCollisions()</h2>
+<div class="block">
+<div class="code"><span class="kw">void</span> <span class="fn">checkPlayerEnemyCollisions</span>(){
+    <span class="kw">if</span>(g_player.invTimer&gt;<span class="nu">0</span>) <span class="kw">return</span>;     <span class="cn">// ① 无敌中？直接返回，不检测碰撞</span>
+    <span class="kw">for</span>(<span class="tp">int</span> i=<span class="nu">0</span>;i&lt;MAX_ENEMIES;i++){
+        <span class="kw">if</span>(!g_enemies[i].active)<span class="kw">continue</span>;
+        <span class="kw">if</span>(<span class="fn">checkCollision</span>(...)){
+            <span class="fn">spawnExplosion</span>(...,<span class="nu">25</span>);        <span class="cn">// ② 敌机大爆炸（25个粒子）</span>
+            g_enemies[i].active=<span class="nu">0</span>;           <span class="cn">// ③ 回收敌机</span>
+            <span class="fn">spawnExplosion</span>(...,<span class="nu">15</span>);        <span class="cn">// ④ 玩家中爆炸（15个粒子）</span>
+            g_player.lives--;                  <span class="cn">// ⑤ 扣一条命</span>
+            g_player.invTimer=INVINCIBLE;      <span class="cn">// ⑥ 进入90帧无敌</span>
+            <span class="kw">if</span>(g_player.lives&lt;=<span class="nu">0</span>){             <span class="cn">// ⑦ 没命了</span>
+                <span class="fn">spawnExplosion</span>(...,<span class="nu">60</span>);    <span class="cn">// ⑧ 终极大爆炸（60个粒子）</span>
+                <span class="kw">if</span>(g_score&gt;g_highScore)        <span class="cn">// ⑨ 更新最高分</span>
+                    g_highScore=g_score;
+                g_state=STATE_GAMEOVER;        <span class="cn">// ⑩ 切换到结束画面</span>
+            }
+            <span class="kw">break</span>;  <span class="cn">// 一次只撞一架敌机</span>
+        }
+    }
+}</div>
+</div>
+<div class="exp">
+<p><span class="q">无敌时间的作用流程是什么？</span><span class="a">被撞 → invTimer设成90 → 接下来的90帧每帧都会跳到第①行直接return（碰撞检测跳过）→ 第124行每帧 invTimer-- → 90帧后归零，回归正常。期间 drawPlayer() 检测到 invTimer>0，每6帧才画一次（闪烁）。这是一个经典的"受伤保护"设计——几乎所有弹幕射击游戏都有。</span></p>
+</div>
+
+<h2>第 221-229 行 — drawBackground()</h2>
+<div class="block">
+<div class="code"><span class="kw">void</span> <span class="fn">drawBackground</span>(){
+    <span class="fn">setbkcolor</span>(<span class="fn">RGB</span>(<span class="nu">5</span>,<span class="nu">5</span>,<span class="nu">30</span>));   <span class="cn">// ① 设背景色 = 深蓝黑色 RGB(5,5,30)</span>
+    <span class="fn">cleardevice</span>();              <span class="cn">// ② 用背景色清空整个窗口</span>
+    <span class="kw">for</span>(<span class="tp">int</span> i=<span class="nu">0</span>;i&lt;MAX_STARS;i++){
+        <span class="tp">int</span> b=g_stars[i].bright;          <span class="cn">// ③ 取这颗星星的基础亮度</span>
+        <span class="kw">if</span>(g_stars[i].speed==<span class="nu">1</span>) b/=<span class="nu">3</span>;        <span class="cn">// ④ speed=1(远星)→亮度除以3→变暗</span>
+        <span class="kw">else if</span>(g_stars[i].speed==<span class="nu">2</span>) b=b*<span class="nu">2</span>/<span class="nu">3</span>; <span class="cn">// ⑤ speed=2(中距)→亮度乘2/3→微暗</span>
+        <span class="fn">setfillcolor</span>(<span class="fn">RGB</span>(b,b,b));          <span class="cn">// ⑥ 设置填充色 = 灰色(b,b,b)</span>
+        <span class="tp">int</span> r=(g_stars[i].speed==<span class="nu">3</span>)?<span class="nu">2</span>:<span class="nu">1</span>;   <span class="cn">// ⑦ speed=3(近星)→半径2; 否则→半径1</span>
+        <span class="fn">solidcircle</span>((<span class="tp">int</span>)g_stars[i].x,(<span class="tp">int</span>)g_stars[i].y,r); <span class="cn">// ⑧ 画实心圆</span>
+    }
+}</div>
+</div>
+<div class="exp">
+<p><span class="q">RGB(5,5,30) 为什么不是 RGB(0,0,0)？</span><span class="a">纯黑(0,0,0)会让星空看起来像"黑纸上的白点"。RGB(5,5,30)带一点点蓝，模拟夜空的感觉。</span></p>
+<p><span class="q">cleardevice() 每帧都在擦屏，为什么不会闪？</span><span class="a">因为有双缓冲——cleardevice 是在后台缓冲区擦的，不是直接擦屏幕。屏幕上始终显示的是上一帧已经完成的完整画面。</span></p>
+<p><span class="q">视差效果总结：</span></p>
+<table>
+<tr><th>speed</th><th>亮度处理</th><th>半径</th><th>视觉效果</th></tr>
+<tr><td>1</td><td>b/3 → 暗</td><td>1</td><td>缓慢、暗淡、小 → 远星</td></tr>
+<tr><td>2</td><td>b*2/3 → 中等</td><td>1</td><td>中等速度、中等亮 → 中间层</td></tr>
+<tr><td>3</td><td>不变 → 亮</td><td>2</td><td>快速、明亮、大 → 近星</td></tr>
+</table>
+</div>
+
+<div class="pagebreak"></div>
+<h2>第 232-263 行 — drawPlayer()</h2>
+<div class="block">
+<div class="code"><span class="kw">void</span> <span class="fn">drawPlayer</span>(){
+    <span class="kw">if</span>(g_player.invTimer&gt;<span class="nu">0</span> &amp;&amp; (g_frameCount/<span class="nu">6</span>)%<span class="nu">2</span>==<span class="nu">0</span>)
+        <span class="kw">return</span>;                <span class="cn">// ① 无敌 + 偶数段？不画 → 闪烁效果</span>
+    <span class="tp">int</span> x=(<span class="tp">int</span>)g_player.x, y=(<span class="tp">int</span>)g_player.y;
+
+    <span class="cn">// ② 机身：蓝色椭圆</span>
+    <span class="fn">setfillcolor</span>(<span class="fn">RGB</span>(<span class="nu">30</span>,<span class="nu">144</span>,<span class="nu">255</span>)); <span class="fn">setlinecolor</span>(<span class="fn">RGB</span>(<span class="nu">100</span>,<span class="nu">180</span>,<span class="nu">255</span>));
+    <span class="fn">solidellipse</span>(x-<span class="nu">12</span>,y-<span class="nu">25</span>,x+<span class="nu">12</span>,y+<span class="nu">20</span>);
+
+    <span class="cn">// ③ 驾驶舱：青色小椭圆</span>
+    <span class="fn">setfillcolor</span>(<span class="fn">RGB</span>(<span class="nu">0</span>,<span class="nu">255</span>,<span class="nu">255</span>)); <span class="fn">setlinecolor</span>(<span class="fn">RGB</span>(<span class="nu">100</span>,<span class="nu">255</span>,<span class="nu">255</span>));
+    <span class="fn">solidellipse</span>(x-<span class="nu">5</span>,y-<span class="nu">10</span>,x+<span class="nu">5</span>,y+<span class="nu">5</span>);
+
+    <span class="cn">// ④ 左翼：浅蓝三角形（3个顶点）</span>
+    { <span class="tp">POINT</span> p[<span class="nu">3</span>]={{x-<span class="nu">12</span>,y+<span class="nu">5</span>},{x-<span class="nu">30</span>,y+<span class="nu">15</span>},{x-<span class="nu">12</span>,y-<span class="nu">5</span>}};
+      <span class="fn">setfillcolor</span>(<span class="fn">RGB</span>(<span class="nu">70</span>,<span class="nu">130</span>,<span class="nu">220</span>)); <span class="fn">setlinecolor</span>(<span class="fn">RGB</span>(<span class="nu">120</span>,<span class="nu">160</span>,<span class="nu">240</span>));
+      <span class="fn">solidpolygon</span>(p,<span class="nu">3</span>); }
+
+    <span class="cn">// ⑤ 右翼：同左翼，对称到右边</span>
+    { <span class="tp">POINT</span> p[<span class="nu">3</span>]={{x+<span class="nu">12</span>,y+<span class="nu">5</span>},{x+<span class="nu">30</span>,y+<span class="nu">15</span>},{x+<span class="nu">12</span>,y-<span class="nu">5</span>}}; <span class="fn">solidpolygon</span>(p,<span class="nu">3</span>); }
+
+    <span class="cn">// ⑥ 尾翼：深蓝三角形</span>
+    { <span class="tp">POINT</span> p[<span class="nu">3</span>]={{x-<span class="nu">8</span>,y+<span class="nu">20</span>},{x+<span class="nu">8</span>,y+<span class="nu">20</span>},{x,y+<span class="nu">35</span>}};
+      <span class="fn">setfillcolor</span>(<span class="fn">RGB</span>(<span class="nu">50</span>,<span class="nu">100</span>,<span class="nu">200</span>)); <span class="fn">solidpolygon</span>(p,<span class="nu">3</span>); }
+
+    <span class="cn">// ⑦ 引擎火焰：橙色三角形，长度随帧号变化</span>
+    <span class="tp">int</span> fl=<span class="nu">8</span>+(g_frameCount%<span class="nu">10</span>)*<span class="nu">2</span>;     <span class="cn">// 火焰长度：8 + (0~9)×2 = 8~26像素循环</span>
+    <span class="fn">setfillcolor</span>(<span class="fn">RGB</span>(<span class="nu">255</span>,<span class="nu">200</span>,<span class="nu">50</span>)); <span class="fn">setlinecolor</span>(<span class="fn">RGB</span>(<span class="nu">255</span>,<span class="nu">150</span>,<span class="nu">0</span>));
+    { <span class="tp">POINT</span> p[<span class="nu">3</span>]={{x-<span class="nu">6</span>,y+<span class="nu">25</span>},{x+<span class="nu">6</span>,y+<span class="nu">25</span>},{x,y+<span class="nu">25</span>+fl}}; <span class="fn">solidpolygon</span>(p,<span class="nu">3</span>); }
+}</div>
+</div>
+<div class="exp">
+<p><span class="q">飞机是6个几何图形拼出来的？</span><span class="a">对——一个椭圆（机身）+ 一个椭圆（驾驶舱）+ 三个三角形（左右翼+尾翼）+ 一个三角形（火焰）。纯几何图形，没加载任何图片文件。这是故意设计的——不依赖外部资源文件的程序在哪都能跑。</span></p>
+<p><span class="q">POINT 是什么？</span><span class="a">Windows 定义的结构体，有两个 LONG 字段：x 和 y。solidpolygon(POINT* points, int num) 是 EasyX 的函数，画实心多边形——points 是顶点数组，num 是顶点个数。</span></p>
+<p><span class="q">火焰的呼吸效果怎么来的？</span><span class="a">frameCount%10 产生 0→1→2...→9→0→1... 的循环。乘2再加8，火焰长度就在 8→10→12...→26→8→10... 之间周期变化。火焰三角最下面的顶点 Y 坐标是 y+25+fl，fl 越大火焰越长。</span></p>
+<p><span class="q">无敌闪烁怎么做到的？</span><span class="a">(g_frameCount/6)%2：每6帧这个值翻转一次（0→0→0→0→0→0→1→1→1→1→1→1→0...）。偶数周期画飞机，奇数周期不画。视觉效果就是一闪一闪——玩家知道自己在无敌状态。</span></p>
+</div>
+
+<h2>第 265-293 行 — drawEnemySingle()</h2>
+<div class="block">
+<div class="code"><span class="kw">void</span> <span class="fn">drawEnemySingle</span>(<span class="tp">Enemy</span>*e){
+    <span class="tp">int</span> x=(<span class="tp">int</span>)e-&gt;x, y=(<span class="tp">int</span>)e-&gt;y;
+    <span class="kw">switch</span>(e-&gt;type){
+    <span class="kw">case</span> ENEMY_SMALL:    <span class="cn">// 红色倒三角</span>
+        <span class="fn">setfillcolor</span>(<span class="fn">RGB</span>(<span class="nu">220</span>,<span class="nu">50</span>,<span class="nu">50</span>));
+        { <span class="tp">POINT</span> p[<span class="nu">3</span>]={{x,y+<span class="nu">15</span>},{x-<span class="nu">15</span>,y-<span class="nu">15</span>},{x+<span class="nu">15</span>,y-<span class="nu">15</span>}};
+          <span class="fn">solidpolygon</span>(p,<span class="nu">3</span>); } <span class="kw">break</span>;
+
+    <span class="kw">case</span> ENEMY_MEDIUM:   <span class="cn">// 橙色梯形 + 满血标记</span>
+        <span class="fn">setfillcolor</span>(<span class="fn">RGB</span>(<span class="nu">240</span>,<span class="nu">140</span>,<span class="nu">30</span>));
+        { <span class="tp">POINT</span> p[<span class="nu">4</span>]={{x-<span class="nu">20</span>,y-<span class="nu">15</span>},{x+<span class="nu">20</span>,y-<span class="nu">15</span>},{x+<span class="nu">5</span>,y+<span class="nu">20</span>},{x-<span class="nu">5</span>,y+<span class="nu">20</span>}};
+          <span class="fn">solidpolygon</span>(p,<span class="nu">4</span>); }
+        <span class="kw">if</span>(e-&gt;hp==<span class="nu">2</span>){ <span class="fn">solidcircle</span>(x,y+<span class="nu">5</span>,<span class="nu">4</span>); } <span class="kw">break</span>; <span class="cn">// hp=2时画个红点表示满血</span>
+
+    <span class="kw">case</span> ENEMY_BIG:       <span class="cn">// 紫色五边形 + HP小黄点</span>
+        <span class="fn">setfillcolor</span>(<span class="fn">RGB</span>(<span class="nu">160</span>,<span class="nu">50</span>,<span class="nu">200</span>));
+        { <span class="tp">POINT</span> p[<span class="nu">5</span>]={{x,y-<span class="nu">27</span>},{x+<span class="nu">27</span>,y+<span class="nu">10</span>},{x+<span class="nu">10</span>,y+<span class="nu">27</span>},{x-<span class="nu">10</span>,y+<span class="nu">27</span>},{x-<span class="nu">27</span>,y+<span class="nu">10</span>}};
+          <span class="fn">solidpolygon</span>(p,<span class="nu">5</span>); }
+        <span class="fn">setfillcolor</span>(<span class="fn">RGB</span>(<span class="nu">255</span>,<span class="nu">255</span>,<span class="nu">100</span>));
+        <span class="kw">for</span>(<span class="tp">int</span> i=<span class="nu">0</span>;i&lt;e-&gt;hp;i++)       <span class="cn">// 画 hp 个小黄点</span>
+            <span class="fn">solidcircle</span>(x-<span class="nu">8</span>+i*<span class="nu">6</span>, y-<span class="nu">10</span>, <span class="nu">2</span>); <span class="kw">break</span>; <span class="cn">// 每个黄点间隔6像素</span>
+    }
+}</div>
+</div>
+<div class="exp">
+<p><span class="q">HP 黄点怎么画的？</span><span class="a">for(int i=0;i&lt;hp;i++) 循环 hp 次。第 i 个小黄点的 X 坐标 = x-8+i*6——第一个在 x-8，第二个在 x-2，第三个在 x+4，第四个在 x+10。每打中一枪 hp--，小黄点就少一个——玩家可以直接看到敌机还剩多少血。</span></p>
+<p><span class="q">为什么每个 case 用大括号包起来？</span><span class="a">因为每个 case 里面声明了局部变量（POINT p[...]）。C++ 编译器要求：如果 case 块里有变量声明，必须用 { } 包起来，否则编译器报错"cannot jump from switch statement to this case label"。</span></p>
+</div>
+
+<h2>第 299-306 行 — drawBullets()</h2>
+<div class="block">
+<div class="code"><span class="kw">void</span> <span class="fn">drawBullets</span>(){
+    <span class="kw">for</span>(<span class="tp">int</span> i=<span class="nu">0</span>;i&lt;MAX_BULLETS;i++){
+        <span class="kw">if</span>(!g_bullets[i].active)<span class="kw">continue</span>;
+        <span class="tp">int</span> bx=(<span class="tp">int</span>)g_bullets[i].x, by=(<span class="tp">int</span>)g_bullets[i].y;
+        <span class="cn">// 三层叠加 = 发光效果：</span>
+        <span class="fn">setfillcolor</span>(<span class="fn">RGB</span>(<span class="nu">100</span>,<span class="nu">100</span>,<span class="nu">0</span>));       <span class="cn">// ① 外圈光晕：暗黄色大椭圆</span>
+        <span class="fn">solidellipse</span>(bx-<span class="nu">6</span>,by-<span class="nu">8</span>,bx+<span class="nu">6</span>,by+<span class="nu">8</span>);
+        <span class="fn">setfillcolor</span>(<span class="fn">RGB</span>(<span class="nu">255</span>,<span class="nu">255</span>,<span class="nu">50</span>));       <span class="cn">// ② 中间核心：亮黄色椭圆</span>
+        <span class="fn">solidellipse</span>(bx-<span class="nu">3</span>,by-<span class="nu">5</span>,bx+<span class="nu">3</span>,by+<span class="nu">5</span>);
+        <span class="fn">setfillcolor</span>(<span class="fn">RGB</span>(<span class="nu">255</span>,<span class="nu">255</span>,<span class="nu">255</span>));       <span class="cn">// ③ 中心高光：白色小圆点</span>
+        <span class="fn">solidcircle</span>(bx,by-<span class="nu">2</span>,<span class="nu">1</span>);
+    }
+}</div>
+</div>
+<div class="exp">
+<p><span class="q">为什么要三层叠在一起？</span><span class="a">单层只是一个颜色单一的椭圆，看着像一个色块。三层叠在一起——暗光晕+亮核心+白高光——看起来就像在发光。这是像素绘中很基础的技巧，成本很低但效果很好。</span></p>
+</div>
+
+<h2>第 309-321 行 — drawParticles()</h2>
+<div class="block">
+<div class="code"><span class="kw">void</span> <span class="fn">drawParticles</span>(){
+    <span class="kw">for</span>(<span class="tp">int</span> i=<span class="nu">0</span>;i&lt;MAX_PARTICLES;i++){
+        <span class="kw">if</span>(!g_particles[i].active)<span class="kw">continue</span>;
+        <span class="tp">float</span> ratio=(<span class="tp">float</span>)g_particles[i].life/g_particles[i].maxLife; <span class="cn">// 剩余寿命比例 1.0→0.0</span>
+        <span class="tp">int</span> r,g,b;
+        <span class="kw">if</span>(ratio&gt;<span class="nu">0.6f</span>){       <span class="cn">// 前40%寿命：黄色→橙色</span>
+            r=<span class="nu">255</span>; g=(<span class="tp">int</span>)(<span class="nu">255</span>*(ratio-<span class="nu">0.4f</span>)/<span class="nu">0.6f</span>); b=<span class="nu">0</span>;
+        }<span class="kw">else if</span>(ratio&gt;<span class="nu">0.3f</span>){ <span class="cn">// 中间30%寿命：橙色→红色</span>
+            r=<span class="nu">255</span>; g=(<span class="tp">int</span>)(<span class="nu">150</span>*ratio/<span class="nu">0.6f</span>); b=<span class="nu">0</span>;
+        }<span class="kw">else</span>{               <span class="cn">// 最后30%寿命：红色→暗红</span>
+            r=(<span class="tp">int</span>)(<span class="nu">255</span>*ratio/<span class="nu">0.3f</span>); g=<span class="nu">0</span>; b=<span class="nu">0</span>;
+        }
+        <span class="tp">int</span> size=(<span class="tp">int</span>)(<span class="nu">3.0f</span>*ratio)+<span class="nu">1</span>;   <span class="cn">// 粒子半径也随寿命缩小：4→1</span>
+        <span class="fn">setfillcolor</span>(<span class="fn">RGB</span>(r,g,b));
+        <span class="fn">solidcircle</span>((<span class="tp">int</span>)g_particles[i].x,(<span class="tp">int</span>)g_particles[i].y,size);
+    }
+}</div>
+</div>
+<div class="exp">
+<p><span class="q">ratio 是什么？</span><span class="a">ratio = 剩余寿命 / 总寿命。刚生成时 life=maxLife → ratio=1.0。快消失时 life≈0 → ratio≈0。用这个 1.0→0.0 的渐变值来驱动颜色和大小变化，实现"从亮到暗、从大到小"的熄灭效果。</span></p>
+<p><span class="q">颜色计算的数学：</span></p>
+<table>
+<tr><th>阶段</th><th>ratio范围</th><th>R</th><th>G</th><th>B</th><th>颜色</th></tr>
+<tr><td>① 初生</td><td>0.6~1.0</td><td>255</td><td>170~255</td><td>0</td><td>黄色→橙色</td></tr>
+<tr><td>② 中场</td><td>0.3~0.6</td><td>255</td><td>75~150</td><td>0</td><td>橙色→红色</td></tr>
+<tr><td>③ 衰减</td><td>0.0~0.3</td><td>0~255</td><td>0</td><td>0</td><td>红色→暗黑</td></tr>
+</table>
+<p><span class="q">答辩怎么说这段话？</span><span class="a">"粒子渲染的核心是一个 ratio 值——剩余寿命占比。这个值从 1.0 线性衰减到 0.0，我用它做颜色插值和大小插值。黄→橙→红→暗的渐变模拟火花冷却过程，大小从 4 像素缩到 1 像素模拟粒子燃烧衰减。"</span></p>
+</div>
+
+<h2>第 323-339 行 — drawUI()</h2>
+<div class="block">
+<div class="code"><span class="kw">void</span> <span class="fn">drawUI</span>(){
+    <span class="fn">setfillcolor</span>(<span class="fn">RGB</span>(<span class="nu">0</span>,<span class="nu">0</span>,<span class="nu">0</span>)); <span class="fn">setlinecolor</span>(<span class="fn">RGB</span>(<span class="nu">50</span>,<span class="nu">50</span>,<span class="nu">50</span>));
+    <span class="fn">solidrectangle</span>(<span class="nu">0</span>,<span class="nu">0</span>,WINDOW_WIDTH,<span class="nu">40</span>);  <span class="cn">// 顶部黑底条（坐标0,0到720,40）</span>
+    <span class="fn">settextstyle</span>(<span class="nu">24</span>,<span class="nu">0</span>,<span class="fn">_T</span>(<span class="st">"Consolas"</span>));     <span class="cn">// 字体：Consolas，高24像素</span>
+    <span class="fn">setbkmode</span>(TRANSPARENT);                   <span class="cn">// 文字背景透明（不盖住黑条）</span>
+    <span class="tp">TCHAR</span> t[<span class="nu">64</span>];
+
+    <span class="fn">settextcolor</span>(<span class="fn">RGB</span>(<span class="nu">255</span>,<span class="nu">255</span>,<span class="nu">200</span>));          <span class="cn">// 黄白色文字</span>
+    <span class="fn">_stprintf_s</span>(t,<span class="fn">_T</span>(<span class="st">"Score: %d"</span>),g_score);  <span class="cn">// 格式化："Score: 150"</span>
+    <span class="fn">outtextxy</span>(<span class="nu">20</span>,<span class="nu">6</span>,t);                          <span class="cn">// 在(20,6)位置输出</span>
+
+    <span class="fn">_stprintf_s</span>(t,<span class="fn">_T</span>(<span class="st">"Best: %d"</span>),g_highScore);
+    <span class="fn">outtextxy</span>(<span class="nu">240</span>,<span class="nu">6</span>,t);
+
+    <span class="fn">settextcolor</span>(<span class="fn">RGB</span>(<span class="nu">255</span>,<span class="nu">80</span>,<span class="nu">80</span>));              <span class="cn">// 红色文字</span>
+    <span class="fn">_stprintf_s</span>(t,<span class="fn">_T</span>(<span class="st">"HP x %d"</span>),g_player.lives);
+    <span class="fn">outtextxy</span>(<span class="nu">500</span>,<span class="nu">6</span>,t);
+
+    <span class="kw">if</span>(g_player.invTimer&gt;<span class="nu">0</span>){                      <span class="cn">// 有无敌？</span>
+        <span class="fn">settextcolor</span>(<span class="fn">RGB</span>(<span class="nu">100</span>,<span class="nu">200</span>,<span class="nu">255</span>));
+        <span class="fn">outtextxy</span>(<span class="nu">620</span>,<span class="nu">6</span>,<span class="fn">_T</span>(<span class="st">"INV"</span>));           <span class="cn">// 蓝字显示 "INV" = invincible</span>
+    }
+    <span class="fn">setlinecolor</span>(<span class="fn">RGB</span>(<span class="nu">40</span>,<span class="nu">40</span>,<span class="nu">100</span>));
+    <span class="fn">line</span>(<span class="nu">0</span>,<span class="nu">42</span>,WINDOW_WIDTH,<span class="nu">42</span>);                    <span class="cn">// 底部分割线</span>
+}</div>
+</div>
+<div class="exp">
+<p><span class="q">_stprintf_s 是干嘛的？</span><span class="a">sprintf 的 Windows 安全版本。把后面的参数（g_score 等）按格式串（"Score: %d"）拼成字符串，存到 t 数组里。%d 被替换成 g_score 的值。比如 g_score=150 → t="Score: 150"。outtextxy 把 t 画到屏幕指定位置。</span></p>
+<p><span class="q">setbkmode(TRANSPARENT) 的作用？</span><span class="a">文字默认模式是 OPAQUE（不透明）——每个字的背景是一块纯色矩形。TRANSPARENT 让文字背景透明，不会盖住后面的黑条和星空。</span></p>
+</div>
+
+<h2>第 341-358 行 — drawMenu()</h2>
+<div class="block">
+<div class="code"><span class="kw">void</span> <span class="fn">drawMenu</span>(){
+    <span class="fn">drawBackground</span>();                        <span class="cn">// ① 画星空背景</span>
+    <span class="fn">setbkmode</span>(TRANSPARENT);
+    <span class="fn">settextstyle</span>(<span class="nu">56</span>,<span class="nu">0</span>,<span class="fn">_T</span>(<span class="st">"Consolas"</span>));      <span class="cn">// ② 大字：56像素高</span>
+    <span class="fn">settextcolor</span>(<span class="fn">RGB</span>(<span class="nu">50</span>,<span class="nu">200</span>,<span class="nu">255</span>));
+    <span class="fn">outtextxy</span>(<span class="nu">140</span>,<span class="nu">220</span>,<span class="fn">_T</span>(<span class="st">"PLANE WAR"</span>));     <span class="cn">// ③ 标题</span>
+
+    <span class="fn">settextstyle</span>(<span class="nu">24</span>,<span class="nu">0</span>,<span class="fn">_T</span>(<span class="st">"Consolas"</span>));
+    <span class="fn">settextcolor</span>(<span class="fn">RGB</span>(<span class="nu">180</span>,<span class="nu">180</span>,<span class="nu">200</span>));
+    <span class="fn">outtextxy</span>(<span class="nu">160</span>,<span class="nu">320</span>,<span class="fn">_T</span>(<span class="st">"C Programming - EasyX"</span>));
+
+    <span class="fn">settextstyle</span>(<span class="nu">22</span>,<span class="nu">0</span>,<span class="fn">_T</span>(<span class="st">"Consolas"</span>));
+    <span class="fn">settextcolor</span>(<span class="fn">RGB</span>(<span class="nu">150</span>,<span class="nu">200</span>,<span class="nu">150</span>));          <span class="cn">// ④ 绿色操作说明</span>
+    <span class="fn">outtextxy</span>(<span class="nu">200</span>,<span class="nu">430</span>,<span class="fn">_T</span>(<span class="st">"WASD / Arrow   Move"</span>));
+    <span class="fn">outtextxy</span>(<span class="nu">200</span>,<span class="nu">470</span>,<span class="fn">_T</span>(<span class="st">"SPACE          Shoot"</span>));
+    <span class="fn">outtextxy</span>(<span class="nu">200</span>,<span class="nu">510</span>,<span class="fn">_T</span>(<span class="st">"Q              Back to Menu"</span>));
+    <span class="fn">outtextxy</span>(<span class="nu">200</span>,<span class="nu">550</span>,<span class="fn">_T</span>(<span class="st">"ESC            Quit"</span>));
+
+    <span class="kw">if</span>((g_frameCount/<span class="nu">30</span>)%<span class="nu">2</span>==<span class="nu">0</span>){                  <span class="cn">// ⑤ 每30帧闪烁一次</span>
+        <span class="fn">settextstyle</span>(<span class="nu">28</span>,<span class="nu">0</span>,<span class="fn">_T</span>(<span class="st">"Consolas"</span>));
+        <span class="fn">settextcolor</span>(<span class="fn">RGB</span>(<span class="nu">255</span>,<span class="nu">255</span>,<span class="nu">100</span>));
+        <span class="fn">outtextxy</span>(<span class="nu">170</span>,<span class="nu">620</span>,<span class="fn">_T</span>(<span class="st">"Press SPACE to Start"</span>));
+    }
+    <span class="fn">updateStars</span>();                            <span class="cn">// ⑥ 星星继续动（菜单也有动态背景）</span>
+    <span class="fn">FlushBatchDraw</span>();                        <span class="cn">// ⑦ 提交到屏幕！</span>
+}</div>
+</div>
+<div class="exp">
+<p><span class="q">"Press SPACE to Start" 怎么做到闪烁的？</span><span class="a">(g_frameCount/30)%2 每30帧（0.5秒）翻转一次。偶数30帧显示、奇数30帧不显示。就是一闪一闪的效果——吸引眼球，告诉玩家"按这里开始"。</span></p>
+<p><span class="q">FlushBatchDraw 为什么在这里？</span><span class="a">菜单状态不调用 render() 函数（render 只在游戏中调用）。但菜单也需要把画的内容提交到屏幕，所以直接在 drawMenu() 末尾提交。这是之前黑屏 bug 的原因——忘了加这一行。</span></p>
+</div>
+
+<h2>第 361-376 行 — drawGameOver()</h2>
+<div class="block">
+<div class="code"><span class="kw">void</span> <span class="fn">drawGameOver</span>(){
+    <span class="fn">drawBackground</span>();
+    <span class="fn">setbkmode</span>(TRANSPARENT);
+    <span class="fn">settextstyle</span>(<span class="nu">48</span>,<span class="nu">0</span>,<span class="fn">_T</span>(<span class="st">"Consolas"</span>));
+    <span class="fn">settextcolor</span>(<span class="fn">RGB</span>(<span class="nu">255</span>,<span class="nu">100</span>,<span class="nu">100</span>));            <span class="cn">// 红色大字</span>
+    <span class="fn">outtextxy</span>(<span class="nu">180</span>,<span class="nu">260</span>,<span class="fn">_T</span>(<span class="st">"GAME OVER"</span>));
+    <span class="fn">settextstyle</span>(<span class="nu">30</span>,<span class="nu">0</span>,<span class="fn">_T</span>(<span class="st">"Consolas"</span>));
+    <span class="fn">settextcolor</span>(<span class="fn">RGB</span>(<span class="nu">255</span>,<span class="nu">255</span>,<span class="nu">150</span>));            <span class="cn">// 黄字显示分数</span>
+    <span class="tp">TCHAR</span> t[<span class="nu">64</span>];
+    <span class="fn">_stprintf_s</span>(t,<span class="fn">_T</span>(<span class="st">"Score: %d"</span>),g_score);
+    <span class="fn">outtextxy</span>(<span class="nu">220</span>,<span class="nu">370</span>,t);
+    <span class="fn">_stprintf_s</span>(t,<span class="fn">_T</span>(<span class="st">"Best: %d"</span>),g_highScore);
+    <span class="fn">outtextxy</span>(<span class="nu">220</span>,<span class="nu">410</span>,t);
+    <span class="kw">if</span>((g_frameCount/<span class="nu">30</span>)%<span class="nu">2</span>==<span class="nu">0</span>){                    <span class="cn">// 闪烁提示</span>
+        <span class="fn">settextstyle</span>(<span class="nu">24</span>,<span class="nu">0</span>,<span class="fn">_T</span>(<span class="st">"Consolas"</span>));
+        <span class="fn">settextcolor</span>(<span class="fn">RGB</span>(<span class="nu">255</span>,<span class="nu">255</span>,<span class="nu">100</span>));
+        <span class="fn">outtextxy</span>(<span class="nu">160</span>,<span class="nu">530</span>,<span class="fn">_T</span>(<span class="st">"R=Restart  ESC=Quit"</span>));
+    }
+    <span class="fn">updateStars</span>();
+    <span class="fn">FlushBatchDraw</span>();
+}</div>
+</div>
+
+<h2>第 379-420 行 — main()</h2>
+<div class="block">
+<div class="code"><span class="kw">void</span> <span class="fn">updateGame</span>(){
+    <span class="fn">updatePlayer</span>();                      <span class="cn">// 1. 玩家：按键 → 移动 → 射击</span>
+    <span class="fn">updateBullets</span>();                     <span class="cn">// 2. 子弹：往上飞 → 回收</span>
+    <span class="fn">updateEnemies</span>();                     <span class="cn">// 3. 敌机：下落 → 生成新敌机</span>
+    <span class="fn">checkBulletEnemyCollisions</span>();        <span class="cn">// 4. 子弹 vs 敌机碰撞</span>
+    <span class="fn">checkPlayerEnemyCollisions</span>();        <span class="cn">// 5. 玩家 vs 敌机碰撞</span>
+    <span class="fn">updateParticles</span>();                    <span class="cn">// 6. 粒子：扩散 → 衰减</span>
+    <span class="fn">updateStars</span>();                        <span class="cn">// 7. 星星：滚动</span>
+}
+
+<span class="kw">void</span> <span class="fn">render</span>(){
+    <span class="fn">drawBackground</span>();                    <span class="cn">// 1层：星空</span>
+    <span class="fn">drawBullets</span>();                       <span class="cn">// 2层：子弹</span>
+    <span class="fn">drawEnemies</span>();                       <span class="cn">// 3层：敌机</span>
+    <span class="fn">drawParticles</span>();                     <span class="cn">// 4层：粒子</span>
+    <span class="fn">drawPlayer</span>();                        <span class="cn">// 5层：玩家</span>
+    <span class="fn">drawUI</span>();                            <span class="cn">// 6层：UI栏</span>
+    <span class="fn">FlushBatchDraw</span>();                    <span class="cn">// 提交！</span>
+}</div>
+</div>
+
+<div class="block">
+<div class="code"><span class="tp">int</span> <span class="fn">main</span>(){
+    <span class="fn">initgraph</span>(WINDOW_WIDTH,WINDOW_HEIGHT);  <span class="cn">// ① 打开720×960的图形窗口</span>
+    <span class="fn">BeginBatchDraw</span>();                        <span class="cn">// ② 开启双缓冲模式</span>
+    <span class="fn">srand</span>((<span class="kw">unsigned</span>)<span class="fn">time</span>(<span class="nu">NULL</span>));               <span class="cn">// ③ 用当前时间当随机种子</span>
+    <span class="fn">initGame</span>();                              <span class="cn">// ④ 初始化所有数据</span>
+    g_highScore=<span class="nu">0</span>; g_state=STATE_MENU; g_frameCount=<span class="nu">0</span>;
+
+    <span class="kw">while</span>(<span class="nu">1</span>){                                   <span class="cn">// ⑤ 死循环——游戏一直跑</span>
+        g_frameCount++;                     <span class="cn">// ⑥ 帧号+1</span>
+
+        <span class="kw">switch</span>(g_state){                    <span class="cn">// ⑦ 根据状态做不同的事</span>
+        <span class="kw">case</span> STATE_MENU:
+            <span class="fn">drawMenu</span>();
+            <span class="kw">if</span>(KEY_DOWN(VK_SPACE)){          <span class="cn">// 空格→开始</span>
+                <span class="fn">initGame</span>(); g_state=STATE_PLAYING;
+            }
+            <span class="kw">if</span>(KEY_DOWN(VK_ESCAPE)) <span class="kw">goto</span> exitGame;
+            <span class="kw">break</span>;
+
+        <span class="kw">case</span> STATE_PLAYING:
+            <span class="fn">updateGame</span>(); <span class="fn">render</span>();
+            <span class="kw">if</span>(KEY_DOWN(<span class="st">'Q'</span>)){ g_state=STATE_MENU; }
+            <span class="kw">if</span>(KEY_DOWN(VK_ESCAPE)) <span class="kw">goto</span> exitGame;
+            <span class="kw">break</span>;
+
+        <span class="kw">case</span> STATE_GAMEOVER:
+            <span class="fn">drawGameOver</span>();
+            <span class="kw">if</span>(KEY_DOWN(<span class="st">'R'</span>)){              <span class="cn">// R→重来</span>
+                <span class="fn">initGame</span>(); g_state=STATE_PLAYING;
+            }
+            <span class="kw">if</span>(KEY_DOWN(VK_ESCAPE)) <span class="kw">goto</span> exitGame;
+            <span class="fn">updateStars</span>();                     <span class="cn">// 让星星继续动</span>
+            <span class="fn">updateParticles</span>();                  <span class="cn">// 让爆炸粒子继续散</span>
+            <span class="kw">break</span>;
+        }
+
+        <span class="fn">Sleep</span>(<span class="nu">16</span>);                            <span class="cn">// ⑧ 等16毫秒 → 每秒≈60帧</span>
+    }
+
+exitGame:
+    <span class="fn">EndBatchDraw</span>();                         <span class="cn">// ⑨ 关闭双缓冲</span>
+    <span class="fn">closegraph</span>();                            <span class="cn">// ⑩ 关闭图形窗口</span>
+    <span class="kw">return</span> <span class="nu">0</span>;
+}</div>
+</div>
+<div class="exp">
+<p><span class="q">srand((unsigned)time(NULL)) 是干嘛的？</span><span class="a">time(NULL) 返回从1970年1月1日到现在的秒数。把秒数当作随机种子喂给 srand()，之后 rand() 每次运行都会产生不同的序列。如果不调 srand，每次运行 rand() 返回的序列都是一模一样的——敌机每次都从同一个位置出来。</span></p>
+<p><span class="q">Sleep(16) 为什么是16？</span><span class="a">1000毫秒 ÷ 60帧 ≈ 16.67毫秒/帧。Sleep(16) 让每帧至少等16毫秒，帧率不会超过60FPS。没有这个 Sleep，主循环会疯狂旋转——每秒几百上千帧——吃满CPU，而且不同电脑上游戏速度不一样。</span></p>
+<p><span class="q">为什么 GAMEOVER 还要 updateStars 和 updateParticles？</span><span class="a">结束画面是静态的，但玩家死亡后的爆炸粒子需要继续扩散衰减，星星也需要继续滚动——保持画面有动感。不调的话粒子就停在死亡那一刻不动了，看着很怪。</span></p>
+<p><span class="q">goto 真的不丢人吗？</span><span class="a">不丢人。C 语言里 goto 用于跳到函数末尾的统一清理出口是标准做法。Linux 内核源码里大量使用了这种模式：`goto out;` / `goto err;`。丑的是用 goto 来来回回跳做控制流——那是面条代码。但 goto 做错误处理和资源清理非常干净。</span></p>
+</div>
+
+<hr style="border-color:var(--bdr);margin:60px 0;">
+
+<p style="text-align:center;color:var(--com);">
+这份文档覆盖了 main.cpp 的 <strong style="color:var(--acc);">每一行代码</strong>。答辩前两天对着看一遍，确保每行问到你都能答。<br>
+如果还有哪行不理解的，告诉我行号，我再给你展开。
+</p>
+
+</div>
+</body>
+</html>
