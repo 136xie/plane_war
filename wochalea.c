@@ -6,8 +6,4 @@ int main() {
 	char name[50];
 	int student_score[COURSE_NUM];
 	double average;
-	FILE* fp = fopen("D:\\StudentGrade.txt.txt", "w");
-	for (int i = 0; i < STUDENT_NUM;i++) {
-		scanf("%d %s %d %d %d %d %d", &id, name, &student_score[0], &student_score[1], &student_score[2], &student_score[3], &student_score[4]);
-		int sum = 0;
-		for (int j = 0; j < 5; j++) {
+	FILE* 
