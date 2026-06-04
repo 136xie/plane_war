@@ -11,14 +11,3 @@ int main() {
 		scanf("%d %s %d %d %d %d %d", &id, name, &student_score[0], &student_score[1], &student_score[2], &student_score[3], &student_score[4]);
 		int sum = 0;
 		for (int j = 0; j < 5; j++) {
-			sum += student_score[j];
-		}
-		average = sum / (float)COURSE_NUM;
-		fprintf(fp, "%d;%s;%d;%d;%d;%d;%d;%lf\n", id, name, student_score[0], student_score[1], student_score[2], student_score[3], student_score[4], average);
-
-	}
-	fclose(fp);
-	printf("save success \n");
-	return 0;
-
-}
